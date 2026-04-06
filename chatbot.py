@@ -87,13 +87,18 @@ def buscar_receitas(ingredientes):
         cob_r = match_r / len(ings_r)
         cob_u = match_u / len(ings_norm) if ings_norm else 0
         score  = (2 * cob_r * cob_u / (cob_r + cob_u)) if (cob_r + cob_u) else 0
-        resultados.append((receita, score, match_r))
-    resultados.sort(key=lambda x: (-x[1], -x[2]))
+        resultados.append((receita, score, match_r, match_u))
+    # prioriza quantos ingredientes do usuario sao usados, depois o score geral
+    resultados.sort(key=lambda x: (-x[3], -x[1], -x[2]))
     return resultados[:3]
 
 
+PALAVRAS_GENERICAS = {"receita", "receitas", "fazer", "preparar", "cozinhar", "quero", "uma", "tem", "como", "busca", "mostra"}
+
 def buscar_por_nome(texto):
-    palavras = [p for p in normalizar(texto).split() if len(p) > 2]
+    palavras = [p for p in normalizar(texto).split() if len(p) > 2 and p not in PALAVRAS_GENERICAS]
+    if not palavras:
+        return []
     resultados = []
     for receita in RECEITAS:
         palavras_nome = [p for p in normalizar(receita["nome"]).split() if len(p) > 2]
@@ -184,26 +189,36 @@ def cancelar_receita(sessao):
     return "Sem problema, cancelei essa receita! O que voce gostaria de cozinhar agora?"
 
 
+SUGESTOES_POS_RECEITA = [
+    "Que tal preparar uma sobremesa agora?",
+    "O que acha de um lanche rapido na sequencia?",
+    "Agora vamos preparar uma sobremesa?",
+    "Que tal algo para beber para acompanhar?",
+    "Que tal partir para um prato principal agora?",
+    "O que acha de preparar um acompanhamento?",
+]
+
 def processar_conclusao(mensagem, sessao):
     texto_norm = normalizar(mensagem)
     nome = sessao["receita"]["nome"] if sessao["receita"] else "prato"
+    sugestao = random.choice(SUGESTOES_POS_RECEITA)
     resetar_sessao(sessao)
 
     if any(p in texto_norm for p in POSITIVOS):
         return random.choice([
-            f"Que otimo! Fico feliz que '{nome}' ficou uma delicia! Quer tentar outra receita?",
-            f"Arrasou na cozinha! '{nome}' feito com sucesso! O que vamos cozinhar da proxima vez?",
-            f"Excelente! Tenho certeza que ficou gostoso. Quer mais alguma receita?",
+            f"Que otimo! Fico feliz que '{nome}' ficou uma delicia!\n\n{sugestao}",
+            f"Arrasou na cozinha! '{nome}' feito com sucesso!\n\n{sugestao}",
+            f"Excelente! Tenho certeza que ficou gostoso.\n\n{sugestao}",
         ])
     if any(p in texto_norm for p in NEGATIVOS):
         return random.choice([
-            "Que pena! Mas faz parte do aprendizado. Quer tentar outra receita?",
-            "Nao desanime! Cozinhar e uma arte que se aprende com a pratica. Quer tentar outra?",
+            f"Que pena! Mas faz parte do aprendizado.\n\n{sugestao}",
+            f"Nao desanime! Cozinhar e uma arte que se aprende com a pratica.\n\n{sugestao}",
         ])
     return random.choice([
-        "Espero que tenha ficado otimo! Quer pedir mais alguma receita?",
-        "Que bom cozinhar junto com voce! Quer tentar outra receita?",
-        "Obrigado por cozinhar comigo! Quer mais alguma receita?",
+        f"Espero que tenha ficado otimo!\n\n{sugestao}",
+        f"Que bom cozinhar junto com voce!\n\n{sugestao}",
+        f"Obrigado por cozinhar comigo!\n\n{sugestao}",
     ])
 
 def sugerir_receita(sessao):
@@ -212,18 +227,9 @@ def sugerir_receita(sessao):
     dif = receita.get("dificuldade", "?").title()
     sessao["pergunta_tipo"] = "sugestao"
 
-    total = len(sessao["candidatas"])
-    if total == 1:
-        return (
-            f"Encontrei uma receita otima para voce: '{receita['nome']}'!\n"
-            f"Tempo: {receita['tempo']} | Dificuldade: {dif}\n\nO que acha dessa opcao?"
-        )
-
-    restantes = total - indice - 1
-    aviso = f" (tenho mais {restantes} {'opcoes' if restantes > 1 else 'opcao'} se nao gostar)" if restantes > 0 else ""
     return (
         f"Que tal '{receita['nome']}'?\n"
-        f"Tempo: {receita['tempo']} | Dificuldade: {dif}{aviso}\n\nVoce toparia fazer essa receita?"
+        f"Tempo: {receita['tempo']} | Dificuldade: {dif}\n\nVoce toparia fazer essa receita?"
     )
 
 
@@ -235,21 +241,46 @@ def resposta_sondagem(mensagem, texto_norm, sessao):
         "topo", "aceito", "adorei", "perfeito", "gostei", "combinado", "show",
     ])
     disse_nao = any(p in texto_norm for p in [
-        "nao", "prefiro", "outro", "outra", "muda", "diferente",
+        "nao", "noa", "nop", "prefiro", "outro", "outra", "muda", "diferente",
         "nope", "passa", "proxima", "proximo",
     ])
 
     if tipo == "sugestao":
         if disse_nao and not disse_sim:
-            sessao["candidata_atual"] += 1
-            if sessao["candidata_atual"] >= len(sessao["candidatas"]):
+            restantes = len(sessao["candidatas"]) - sessao["candidata_atual"] - 1
+            if restantes <= 0:
                 sessao["estado"] = "inicio"
-                return "Poxa, nao tinha mais nenhuma opcao que te agradasse!\n\nQuer tentar com outros ingredientes ou escolher uma categoria diferente?"
-            return sugerir_receita(sessao)
-        # Usuario aceitou - pede permissao para mostrar ingredientes
+                return (
+                    "Poxa, era essa a ultima opcao que eu tinha!\n\n"
+                    "Posso te ajudar de outras formas:\n"
+                    "  - Diga os ingredientes que voce tem e sugiro algo\n"
+                    "  - Peca uma categoria: prato principal, sobremesa, lanche...\n"
+                    "  - Ou peÃ§a uma receita aleatoria!\n\n"
+                    "O que voce prefere?"
+                )
+            sessao["pergunta_tipo"] = "confirmar_proxima"
+            return f"Tudo bem! Tenho mais {restantes} {'opcoes' if restantes > 1 else 'opcao'} guardada. Quer ver a proxima?"
+        if not disse_sim:
+            return "Nao entendi! Quer fazer essa receita? Pode dizer 'sim' ou 'nao'."
         sessao["pergunta_tipo"] = "confirmar_ingredientes"
         receita = sessao["candidatas"][sessao["candidata_atual"]]
         return f"Otima escolha! Posso te passar a lista de ingredientes do '{receita['nome']}'?"
+
+    if tipo == "confirmar_proxima":
+        if disse_nao and not disse_sim:
+            sessao["estado"] = "inicio"
+            return (
+                "Sem problema! Posso te ajudar de outras formas:\n"
+                "  - Me diga os ingredientes que voce tem\n"
+                "  - Peça uma categoria: prato principal, sobremesa, lanche...\n"
+                "  - Ou peça uma receita aleatoria!\n\n"
+                "O que voce quer fazer?"
+            )
+        if not disse_sim:
+            return "Quer ver a proxima opcao? Pode dizer 'sim' ou 'nao'."
+        sessao["candidata_atual"] += 1
+        sessao["pergunta_tipo"] = None
+        return sugerir_receita(sessao)
 
     if tipo == "confirmar_ingredientes":
         if disse_nao and not disse_sim:
@@ -274,8 +305,7 @@ def resposta_sondagem(mensagem, texto_norm, sessao):
 
 
 def iniciar_busca(candidatas, sessao):
-    sessao.update(candidatas=list(candidatas), candidata_atual=0,
-                  pergunta_tipo=None, estado="sondagem")
+    sessao.update(candidatas=list(candidatas), candidata_atual=0, pergunta_tipo=None, estado="sondagem")
     return sugerir_receita(sessao)
 
 
@@ -349,7 +379,7 @@ def gerar_resposta(mensagem, sessao):
         return "Nao encontrei receita com esse nome. Quer tentar com outro nome ou outra categoria?"
 
     if intencao == "receita_aleatoria":
-        return iniciar_busca([random.choice(RECEITAS)], sessao)
+        return iniciar_busca(random.sample(RECEITAS, 3), sessao)
 
     if intencao.startswith("categoria:"):
         categoria = intencao.split(":", 1)[1]
@@ -358,23 +388,26 @@ def gerar_resposta(mensagem, sessao):
             return f"Nao encontrei receitas na categoria '{categoria}'. Quer tentar outra categoria?"
         return iniciar_busca(random.sample(receitas_cat, min(3, len(receitas_cat))), sessao)
 
-    ingredientes = extrair_ingredientes(tokens)
-    if ingredientes:
-        resultados = buscar_receitas(ingredientes)
-        if resultados:
-            return iniciar_busca([r for r, _, _ in resultados], sessao)
-
-    resultados = buscar_receitas(tokens)
-    if resultados:
-        return iniciar_busca([r for r, _, _ in resultados], sessao)
-
     candidatas_nome = buscar_por_nome(mensagem)
     if candidatas_nome:
         return iniciar_busca(candidatas_nome, sessao)
 
+    ingredientes = extrair_ingredientes(tokens)
+    if ingredientes:
+        resultados = buscar_receitas(ingredientes)
+        if resultados:
+            return iniciar_busca([r for r, *_ in resultados], sessao)
+
+    palavras_genericas = {"receita", "receitas", "cozinhar", "fazer", "comer", "algo", "sugestao", "preparo"}
+    tokens_uteis = [t for t in tokens if t not in palavras_genericas]
+    if tokens_uteis:
+        resultados = buscar_receitas(tokens_uteis)
+        if resultados:
+            return iniciar_busca([r for r, *_ in resultados], sessao)
+
     pedidos_genericos = ["receita", "cozinhar", "fazer", "comer", "algo", "sugestao"]
     if any(p in texto_norm for p in pedidos_genericos):
-        return iniciar_busca([random.choice(RECEITAS)], sessao)
+        return iniciar_busca(random.sample(RECEITAS, 3), sessao)
 
     return (
         "Nao entendi bem o que voce quer.\n"
@@ -384,10 +417,8 @@ def gerar_resposta(mensagem, sessao):
 
 def main():
     sessao = nova_sessao()
-    print("=" * 50)
     print("CHEFBOT - Seu Assistente de Receitas")
     print("Digite 'sair' para encerrar")
-    print("=" * 50)
     print(f"\nChefBot: {AJUDA}\n")
 
     while True:

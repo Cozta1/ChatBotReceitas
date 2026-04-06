@@ -1,5 +1,3 @@
-"""dados.py — Dados estaticos do ChefBot."""
-
 DADOS_TREINO = [
     # saudacao
     ("oi","saudacao"), ("ola","saudacao"), ("hey","saudacao"), ("eai","saudacao"),
@@ -41,6 +39,9 @@ DADOS_TREINO = [
     ("brigadeiro","categoria:sobremesa"), ("sobremesa","categoria:sobremesa"),
     ("torta","categoria:sobremesa"), ("receita doce","categoria:sobremesa"),
     ("doce para sobremesa","categoria:sobremesa"),
+    ("sobremesas","categoria:sobremesa"), ("quero sobremesas","categoria:sobremesa"),
+    ("indique sobremesas","categoria:sobremesa"), ("sobremesas faceis","categoria:sobremesa"),
+    ("sobremesa facil","categoria:sobremesa"), ("doces faceis de fazer","categoria:sobremesa"),
     # categoria:prato principal
     ("receita de almoco","categoria:prato principal"), ("o que fazer para almoco","categoria:prato principal"),
     ("prato principal","categoria:prato principal"), ("receita para jantar","categoria:prato principal"),
@@ -63,7 +64,10 @@ DADOS_TREINO = [
     ("receita de limonada","categoria:bebida"), ("bebida","categoria:bebida"),
     ("suco","categoria:bebida"), ("vitamina","categoria:bebida"),
     ("limonada","categoria:bebida"), ("quentao","categoria:bebida"),
-    ("algo para beber","categoria:bebida"),
+    ("algo para beber","categoria:bebida"), ("quero algo para beber","categoria:bebida"),
+    ("quero beber algo","categoria:bebida"), ("me da algo para beber","categoria:bebida"),
+    ("quero tomar algo","categoria:bebida"), ("tomar uma bebida","categoria:bebida"),
+    ("beber","categoria:bebida"), ("quero beber","categoria:bebida"),
     # categoria:acompanhamento
     ("receita de farofa","categoria:acompanhamento"), ("quero um acompanhamento","categoria:acompanhamento"),
     ("tem salada","categoria:acompanhamento"), ("receita de pure","categoria:acompanhamento"),
@@ -160,14 +164,14 @@ ENCORAJAMENTOS = ["Otimo!", "Muito bem!", "Perfeito!", "Mandou bem!", "Continue 
 # Respostas variadas
 SAUDACOES = [
     ("Ola! Sou o ChefBot, seu assistente culinario!\n"
-     "Me diga quais ingredientes voce tem ou peca uma receita por categoria.\n\n"
-     "O que vamos cozinhar hoje?"),
+    "Digite 'ajuda' para ver tudo que posso fazer por voce.\n\n"
+    "O que vamos cozinhar hoje?"),
     ("Fala! Sou o ChefBot, pronto para cozinhar com voce!\n"
-     "Me conta o que tem na geladeira ou escolha uma categoria de receita.\n\n"
-     "O que vamos preparar?"),
+    "Se quiser saber o que posso fazer, e so digitar 'ajuda'.\n\n"
+    "O que vamos preparar hoje?"),
     ("Boa! ChefBot aqui, especialista em receitas brasileiras!\n"
-     "Me diga os ingredientes que voce tem ou o que quer cozinhar.\n\n"
-     "Me conta, o que tem por ai?"),
+    "Nao sabe por onde comecar? Digite 'ajuda' e te explico tudo.\n\n"
+    "O que voce quer cozinhar hoje?"),
 ]
 DESPEDIDAS = [
     "Tchau! Bom apetite e ate a proxima!",

@@ -172,14 +172,6 @@ SAUDACOES = [
     ("Boa! ChefBot aqui, especialista em receitas brasileiras!\n"
     "Nao sabe por onde comecar? Digite 'ajuda' e te explico tudo.\n\n"
     "O que voce quer cozinhar hoje?"),
-     "Me diga quais ingredientes você tem ou peça uma receita por categoria.\n\n"
-     "O que vamos cozinhar hoje?"),
-    ("Fala! Sou o ChefBot, pronto para cozinhar com você!\n"
-     "Me conta o que tem na geladeira ou escolha uma categoria de receita.\n\n"
-     "O que vamos preparar?"),
-    ("Boa! ChefBot aqui, especialista em receitas brasileiras!\n"
-     "Me diga os ingredientes que você tem ou o que quer cozinhar.\n\n"
-     "Me conta, o que tem por ai?"),
 ]
 DESPEDIDAS = [
     "Tchau! Bom apetite e ate a proxima!",

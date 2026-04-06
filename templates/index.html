@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,148 +8,291 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg: #0b0f19;
       --bg-gradient: radial-gradient(circle at top right, #1a233a, #0b0f19);
       --surface: rgba(23, 32, 51, 0.75);
+      --sidebar-bg: rgba(10, 14, 26, 0.85);
       --border: rgba(255, 255, 255, 0.06);
       --border-focus: rgba(245, 158, 11, 0.4);
       --text: #F8FAFC;
       --muted: #94A3B8;
       --accent: #F59E0B;
       --accent-dk: #D97706;
+      --accent-subtle: rgba(245, 158, 11, 0.12);
       --bot-msg: rgba(30, 41, 59, 0.7);
       --user-msg: linear-gradient(135deg, #F59E0B, #EA580C);
       --user-text: #FFFFFF;
-      --shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      --shadow: 0 16px 40px rgba(0,0,0,0.4);
       --radius: 24px;
+      --sidebar-w: 260px;
       --font-family: 'Outfit', sans-serif;
     }
 
-    html,
-    body {
+    html, body {
       height: 100%;
       background: var(--bg);
-      background-image: var(--bg-gradient);
       font-family: var(--font-family);
       color: var(--text);
     }
 
     body {
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-      padding: 20px;
-      background-image:
-        radial-gradient(circle at 15% 50%, rgba(245, 158, 11, 0.05), transparent 30%),
-        radial-gradient(circle at 85% 30%, rgba(234, 88, 12, 0.05), transparent 30%),
-        var(--bg-gradient);
-    }
-
-    .chat-card {
-      width: 100%;
-      max-width: 720px;
-      height: 88vh;
-      max-height: 850px;
-      background: var(--surface);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .chat-header {
-      background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-      z-index: 10;
-    }
-
-    .logo-badge {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #F59E0B, #EA580C);
-      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      min-height: 100vh;
+      padding: 20px;
+      background-image:
+        radial-gradient(circle at 15% 50%, rgba(245,158,11,0.05), transparent 30%),
+        radial-gradient(circle at 85% 30%, rgba(234,88,12,0.05), transparent 30%),
+        var(--bg-gradient);
     }
 
-    .header-info h1 {
+    .app-wrapper {
+      display: flex;
+      width: 100%;
+      max-width: 980px;
+      height: 88vh;
+      max-height: 850px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 20px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .sidebar-logo .icon {
       font-size: 22px;
-      color: #FFFFFF;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #F59E0B, #EA580C);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo span {
+      font-size: 17px;
       font-weight: 600;
-      line-height: 1.2;
-      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .new-chat-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      background: var(--accent-subtle);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 12px;
+      color: var(--accent);
+      font-family: var(--font-family);
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .new-chat-btn:hover {
+      background: rgba(245,158,11,0.2);
+      border-color: var(--border-focus);
+    }
+
+    .new-chat-btn svg {
+      flex-shrink: 0;
+    }
+
+    .chat-list-label {
+      padding: 14px 16px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px 12px;
+    }
+
+    .chat-list::-webkit-scrollbar { width: 4px; }
+    .chat-list::-webkit-scrollbar-track { background: transparent; }
+    .chat-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-bottom: 2px;
+      position: relative;
+    }
+
+    .chat-item:hover { background: rgba(255,255,255,0.05); }
+    .chat-item.active { background: var(--accent-subtle); }
+
+    .chat-item-icon {
+      font-size: 15px;
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+
+    .chat-item-title {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .chat-item.active .chat-item-title { color: var(--accent); }
+
+    .chat-item-delete {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 6px;
+      line-height: 1;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .chat-item:hover .chat-item-delete { display: flex; align-items: center; }
+    .chat-item-delete:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+    .sidebar-empty {
+      padding: 20px 16px;
+      font-size: 12.5px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .chat-card {
+      flex: 1;
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .chat-header {
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-badge {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #F59E0B, #EA580C);
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+    }
+
+    .header-info { flex: 1; min-width: 0; }
+
+    .header-info h1 {
+      font-size: 18px;
+      color: #fff;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .header-info p {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 3px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
     .dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       background: #10B981;
       border-radius: 50%;
       box-shadow: 0 0 8px #10B981;
       animation: blink 2.5s ease-in-out infinite;
+      flex-shrink: 0;
     }
 
     @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      50% {
-        opacity: .5;
-        transform: scale(0.85);
-      }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(0.85); }
     }
 
     .suggestions-container {
       position: relative;
       display: flex;
       align-items: center;
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15,23,42,0.4);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     .suggestions-bar {
-      padding: 12px 24px;
+      padding: 10px 20px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: nowrap;
       overflow-x: auto;
       scroll-behavior: smooth;
@@ -159,51 +301,10 @@
       scrollbar-width: none;
     }
 
-    .suggestions-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .scroll-arrow {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 60px;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s, color 0.2s;
-      z-index: 5;
-    }
-
-    .scroll-arrow.left {
-      left: 0;
-      background: linear-gradient(to left, transparent, rgba(15, 23, 42, 0.95) 50%, rgba(15, 23, 42, 1));
-      justify-content: flex-start;
-      padding-left: 16px;
-    }
-
-    .scroll-arrow.right {
-      right: 0;
-      background: linear-gradient(to right, transparent, rgba(15, 23, 42, 0.95) 50%, rgba(15, 23, 42, 1));
-      justify-content: flex-end;
-      padding-right: 16px;
-    }
-
-    .scroll-arrow.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .scroll-arrow:hover {
-      color: var(--text);
-    }
+    .suggestions-bar::-webkit-scrollbar { display: none; }
 
     .sugg-label {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
       align-self: center;
       white-space: nowrap;
@@ -211,12 +312,12 @@
     }
 
     .sugg-btn {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 8px 14px;
+      padding: 7px 13px;
       border-radius: 20px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-family: var(--font-family);
       cursor: pointer;
       white-space: nowrap;
@@ -224,7 +325,7 @@
     }
 
     .sugg-btn:hover {
-      background: rgba(245, 158, 11, 0.15);
+      background: rgba(245,158,11,0.15);
       color: var(--accent);
       border-color: var(--border-focus);
       transform: translateY(-1px);
@@ -233,89 +334,59 @@
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 24px;
+      padding: 22px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       scroll-behavior: smooth;
     }
 
-    .chat-messages::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .chat-messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
+    .chat-messages::-webkit-scrollbar { width: 6px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 6px; }
+    .chat-messages::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
     .msg-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-end;
-      animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation: slideUp 0.25s cubic-bezier(0.2,0.8,0.2,1) forwards;
       opacity: 0;
     }
 
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .msg-row.user {
-      flex-direction: row-reverse;
-    }
+    .msg-row.user { flex-direction: row-reverse; }
 
     .avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .avatar.bot {
-      background: rgba(30, 41, 59, 1);
-      border: 1px solid var(--border);
-    }
-
-    .avatar.user {
-      background: var(--user-msg);
-    }
+    .avatar.bot  { background: rgba(30,41,59,1); border: 1px solid var(--border); }
+    .avatar.user { background: var(--user-msg); }
 
     .bubble {
       max-width: 78%;
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 15px;
-      line-height: 1.6;
+      padding: 13px 17px;
+      border-radius: 17px;
+      font-size: 14.5px;
+      line-height: 1.65;
       word-wrap: break-word;
-      letter-spacing: 0.2px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .bubble.bot {
       background: var(--bot-msg);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,0.08);
       border-bottom-left-radius: 4px;
       color: var(--text);
     }
@@ -324,97 +395,52 @@
       background: var(--user-msg);
       color: var(--user-text);
       border-bottom-right-radius: 4px;
-      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+      box-shadow: 0 4px 12px rgba(234,88,12,0.2);
     }
 
-    .bubble.bot strong {
-      font-weight: 600;
-      color: #FCD34D;
-    }
+    .bubble.bot strong { font-weight: 600; color: #FCD34D; }
+    .bubble.bot ul, .bubble.bot ol { padding-left: 18px; margin: 6px 0; }
+    .bubble.bot li { margin: 3px 0; }
+    .bubble.bot hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+    .bubble.bot span.error-text { color: #ef4444; }
 
-    .bubble.bot ul,
-    .bubble.bot ol {
-      padding-left: 20px;
-      margin: 8px 0;
-    }
-
-    .bubble.bot li {
-      margin: 4px 0;
-    }
-
-    .bubble.bot hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 12px 0;
-    }
-
-    .bubble.bot span.error-text {
-      color: #ef4444;
-    }
-
-    .typing-dots {
-      display: flex;
-      gap: 6px;
-      padding: 6px 4px;
-      align-items: center;
-    }
-
+    .typing-dots { display: flex; gap: 5px; padding: 4px 2px; align-items: center; }
     .typing-dots span {
-      width: 8px;
-      height: 8px;
+      width: 7px; height: 7px;
       background: var(--muted);
       border-radius: 50%;
       animation: bounce 1.4s infinite ease-in-out both;
     }
-
-    .typing-dots span:nth-child(1) {
-      animation-delay: -0.32s;
-    }
-
-    .typing-dots span:nth-child(2) {
-      animation-delay: -0.16s;
-    }
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
 
     @keyframes bounce {
-
-      0%,
-      80%,
-      100% {
-        transform: scale(0);
-        opacity: 0.5;
-      }
-
-      40% {
-        transform: scale(1);
-        opacity: 1;
-      }
+      0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+      40%           { transform: scale(1); opacity: 1; }
     }
 
     .chat-input-area {
-      padding: 16px 24px 24px;
+      padding: 14px 22px 22px;
       border-top: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.3);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(15,23,42,0.3);
       flex-shrink: 0;
     }
 
     .input-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-end;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255,255,255,0.05);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 10px 10px 10px 18px;
+      border-radius: 17px;
+      padding: 9px 9px 9px 17px;
       transition: all 0.3s ease;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .input-row:focus-within {
       border-color: var(--border-focus);
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 2px rgba(245,158,11,0.1);
     }
 
     #user-input {
@@ -423,82 +449,60 @@
       outline: none;
       background: transparent;
       font-family: var(--font-family);
-      font-size: 15px;
+      font-size: 14.5px;
       color: var(--text);
       resize: none;
       max-height: 120px;
       line-height: 1.5;
       min-height: 24px;
-      padding: 6px 0;
+      padding: 5px 0;
     }
 
-    #user-input::placeholder {
-      color: var(--muted);
-      font-weight: 300;
-    }
+    #user-input::placeholder { color: var(--muted); font-weight: 300; }
 
     #send-btn {
-      width: 44px;
-      height: 44px;
+      width: 42px; height: 42px;
       background: var(--accent);
       border: none;
-      border-radius: 14px;
+      border-radius: 13px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 4px 10px rgba(245,158,11,0.25);
     }
 
     #send-btn:hover:not(:disabled) {
       background: var(--accent-dk);
       transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35);
+      box-shadow: 0 6px 14px rgba(245,158,11,0.35);
     }
 
-    #send-btn:active:not(:disabled) {
-      transform: scale(0.95) translateY(0);
-    }
-
-    #send-btn:disabled {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--muted);
-      cursor: not-allowed;
-      box-shadow: none;
-    }
+    #send-btn:active:not(:disabled) { transform: scale(0.95); }
+    #send-btn:disabled { background: rgba(255,255,255,0.1); cursor: not-allowed; box-shadow: none; }
 
     #send-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: none;
-      stroke: #FFF;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: transform 0.2s;
-    }
-
-    #send-btn:hover:not(:disabled) svg {
-      transform: translateX(2px) translateY(-2px);
+      width: 19px; height: 19px;
+      fill: none; stroke: #FFF;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
     }
 
     .hint {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--muted);
       text-align: center;
-      margin-top: 12px;
-      letter-spacing: 0.2px;
+      margin-top: 10px;
     }
 
     .hint kbd {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2px 6px;
+      background: rgba(255,255,255,0.1);
+      padding: 2px 5px;
       border-radius: 4px;
       font-size: 10px;
       margin: 0 2px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255,255,255,0.15);
     }
 
     .empty-state {
@@ -507,107 +511,95 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 14px;
       color: var(--muted);
       text-align: center;
       padding: 40px 20px;
-      animation: fadeIn 0.8s ease-out;
+      animation: fadeIn 0.6s ease-out;
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .empty-state .icon {
-      font-size: 56px;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.2));
-    }
+    .empty-state .icon { font-size: 52px; filter: drop-shadow(0 4px 12px rgba(245,158,11,0.2)); }
+    .empty-state h2 { font-size: 22px; color: var(--text); font-weight: 500; }
+    .empty-state p  { font-size: 14px; max-width: 320px; line-height: 1.6; }
 
-    .empty-state h2 {
-      font-size: 24px;
-      color: var(--text);
-      font-weight: 500;
-      letter-spacing: 0.5px;
-    }
-
-    .empty-state p {
-      font-size: 15px;
-      max-width: 340px;
-      line-height: 1.6;
+    @media (max-width: 640px) {
+      body { padding: 0; }
+      .app-wrapper { max-height: 100vh; height: 100vh; border-radius: 0; border: none; flex-direction: column; }
+      .sidebar { width: 100%; height: auto; max-height: 180px; border-right: none; border-bottom: 1px solid var(--border); }
+      .chat-list { display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; gap: 6px; padding: 4px 8px; }
+      .chat-item { min-width: 140px; flex-shrink: 0; }
+      .chat-list-label { display: none; }
     }
   </style>
 </head>
-
 <body>
-  <div class="chat-card">
+  <div class="app-wrapper">
 
-    <header class="chat-header">
-      <div class="logo-badge">🍳</div>
-      <div class="header-info">
-        <h1>ChefBot</h1>
-        <p><span class="dot"></span>Assistente Inteligente de Receitas</p>
-      </div>
-    </header>
-
-    <div class="suggestions-container">
-      <button class="scroll-arrow left" id="scroll-arrow-left" aria-label="Rolar sugestões para a esquerda">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-      <div class="suggestions-bar" id="suggestions-bar">
-        <span class="sugg-label">Experimente:</span>
-        <button class="sugg-btn" onclick="sendSuggestion('Me dê uma receita surpresa deliciosa!')">🎲 Receita
-          Surpresa</button>
-        <button class="sugg-btn" onclick="sendSuggestion('Tem receitas com frango e batata?')">🍗 Frango e
-          Batata</button>
-        <button class="sugg-btn" onclick="sendSuggestion('Me sugira almoços vegetarianos saborosos')">🥦 Opções
-          Vegetarianas</button>
-        <button class="sugg-btn" onclick="sendSuggestion('Me indique sobremesas que são fáceis de fazer')">🍰 Sobremesas
-          Fáceis</button>
-      </div>
-      <button class="scroll-arrow right" id="scroll-arrow-right" aria-label="Rolar sugestões para a direita">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
-    </div>
-
-    <div class="chat-messages" id="messages">
-      <div class="empty-state" id="empty-state">
-        <div class="icon">👨‍🍳</div>
-        <h2>Olá! Sou o ChefBot.</h2>
-        <p>Me diga quais ingredientes você tem na geladeira ou me peça uma receita especial. Vou te ajudar a preparar
-          algo incrível!</p>
-      </div>
-    </div>
-
-    <div class="chat-input-area">
-      <div class="input-row">
-        <textarea id="user-input" placeholder="Digite os ingredientes ou o prato que deseja..." rows="1"></textarea>
-        <button id="send-btn" title="Enviar mensagem">
-          <svg viewBox="0 0 24 24">
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="icon">🍳</div>
+          <span>ChefBot</span>
+        </div>
+        <button class="new-chat-btn" id="new-chat-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
+          Novo chat
         </button>
       </div>
-      <p class="hint">Pressione <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd> + <kbd>Enter</kbd> para nova linha</p>
+
+      <div class="chat-list-label">Conversas</div>
+      <div class="chat-list" id="chat-list">
+        <div class="sidebar-empty" id="sidebar-empty">Nenhuma conversa ainda.<br>Clique em "Novo chat" para começar!</div>
+      </div>
+    </aside>
+
+    <div class="chat-card">
+      <header class="chat-header">
+        <div class="logo-badge">🍳</div>
+        <div class="header-info">
+          <h1 id="chat-title">ChefBot</h1>
+          <p><span class="dot"></span>Assistente Inteligente de Receitas</p>
+        </div>
+      </header>
+
+      <div class="suggestions-container">
+        <div class="suggestions-bar">
+          <span class="sugg-label">Experimente:</span>
+          <button class="sugg-btn" onclick="sendSuggestion('Me dê uma receita surpresa deliciosa!')">🎲 Receita Surpresa</button>
+          <button class="sugg-btn" onclick="sendSuggestion('Tem receitas com frango e batata?')">🍗 Frango e Batata</button>
+          <button class="sugg-btn" onclick="sendSuggestion('Me sugira almoços vegetarianos saborosos')">🥦 Opções Vegetarianas</button>
+          <button class="sugg-btn" onclick="sendSuggestion('Me indique sobremesas que são fáceis de fazer')">🍰 Sobremesas Fáceis</button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="messages">
+        <div class="empty-state" id="empty-state">
+          <div class="icon">👨‍🍳</div>
+          <h2>Olá! Sou o ChefBot.</h2>
+          <p>Me diga quais ingredientes você tem na geladeira ou me peça uma receita especial.</p>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="input-row">
+          <textarea id="user-input" placeholder="Digite os ingredientes ou o prato que deseja..." rows="1"></textarea>
+          <button id="send-btn" title="Enviar mensagem">
+            <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <p class="hint">Pressione <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd> + <kbd>Enter</kbd> para nova linha</p>
+      </div>
     </div>
 
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
-
 </html>

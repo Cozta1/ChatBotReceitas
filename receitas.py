@@ -1,11 +1,12 @@
 RECEITAS = [
-    # PRATOS PRINCIPAIS (15)
+    # -- Pratos principais --
     {
         "nome": "Estrogonofe de Frango",
         "ingredientes": ["frango", "cebola", "alho", "ketchup", "mostarda", "creme de leite", "champignon", "oleo", "sal", "arroz"],
         "categoria": "prato principal",
         "tempo": "40 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Corte o frango em cubos e tempere com sal.",
             "Refogue a cebola e o alho no oleo.",
@@ -21,6 +22,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "3 horas",
         "porcoes": 8,
+        "dificuldade": "dificil",
         "instrucoes": [
             "Deixe o feijao e as carnes de molho na vespera (trocar a agua das carnes).",
             "Cozinhe o feijao na panela de pressao por 30 minutos.",
@@ -37,6 +39,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "20 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Cozinhe o macarrao em agua fervente com sal ate ficar al dente.",
             "Em uma frigideira, aqueca o azeite e doure o alho fatiado em fogo baixo.",
@@ -51,6 +54,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "45 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Massa: bata no liquidificador ovos, leite, farinha e sal.",
             "Faca as panquecas em uma frigideira antiaderente levemente untada.",
@@ -66,6 +70,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "40 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Tempere o peixe com limao, sal e deixe descansar.",
             "Em uma panela, faca camadas: cebola, tomate, pimentao e peixe.",
@@ -81,6 +86,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "50 minutos",
         "porcoes": 6,
+        "dificuldade": "medio",
         "instrucoes": [
             "Dessalgue a carne seca (deixe de molho trocando a agua).",
             "Cozinhe a carne seca e desfie.",
@@ -96,6 +102,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "40 minutos",
         "porcoes": 6,
+        "dificuldade": "facil",
         "instrucoes": [
             "Descasque e corte todos os legumes em cubos.",
             "Refogue a cebola e o alho no azeite.",
@@ -111,6 +118,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "30 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Corte o frango em cubos e tempere com molho shoyu e amido de milho.",
             "Corte os pimentoes em cubos do mesmo tamanho.",
@@ -126,6 +134,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "1 hora",
         "porcoes": 6,
+        "dificuldade": "dificil",
         "instrucoes": [
             "Dessalgue e cozinhe a carne seca, depois desfie.",
             "Refogue a carne desfiada com cebola e alho.",
@@ -141,6 +150,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "40 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Refogue a cebola e o alho no azeite.",
             "Adicione a carne moida e deixe dourar.",
@@ -156,6 +166,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "45 minutos",
         "porcoes": 4,
+        "dificuldade": "dificil",
         "instrucoes": [
             "Cozinhe e desfie o frango.",
             "Refogue a cebola e o alho na manteiga.",
@@ -172,6 +183,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "40 minutos",
         "porcoes": 4,
+        "dificuldade": "medio",
         "instrucoes": [
             "Corte a carne em tiras finas e tempere com sal.",
             "Doure a carne no oleo em fogo alto.",
@@ -187,6 +199,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "1 hora",
         "porcoes": 6,
+        "dificuldade": "medio",
         "instrucoes": [
             "Corte o frango em pedacos e tempere com sal e acafrao.",
             "Doure o frango em uma panela grande.",
@@ -202,6 +215,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "1 hora",
         "porcoes": 8,
+        "dificuldade": "medio",
         "instrucoes": [
             "Cozinhe as folhas de lasanha al dente (se nao for de forno).",
             "Em uma travessa, alterne camadas: molho de tomate, massa, presunto, queijo e molho branco.",
@@ -217,6 +231,7 @@ RECEITAS = [
         "categoria": "prato principal",
         "tempo": "50 minutos",
         "porcoes": 6,
+        "dificuldade": "medio",
         "instrucoes": [
             "Cozinhe o feijao verde ate ficar macio.",
             "Frite o bacon e a linguica em pedacos.",
@@ -228,15 +243,14 @@ RECEITAS = [
         ]
     },
 
-    # ============================================================
-    # SOBREMESAS (12)
-    # ============================================================
+    # -- Sobremesas --
     {
         "nome": "Bolo de Cenoura com Cobertura de Chocolate",
         "ingredientes": ["cenoura", "ovo", "oleo", "acucar", "farinha de trigo", "fermento", "chocolate em po", "manteiga", "leite"],
         "categoria": "sobremesa",
         "tempo": "50 minutos",
         "porcoes": 10,
+        "dificuldade": "medio",
         "instrucoes": [
             "Bata no liquidificador as cenouras, os ovos e o oleo.",
             "Acrescente o acucar e bata mais um pouco.",
@@ -252,6 +266,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "20 minutos",
         "porcoes": 30,
+        "dificuldade": "facil",
         "instrucoes": [
             "Em uma panela, misture o leite condensado, o chocolate em po e a manteiga.",
             "Cozinhe em fogo medio, mexendo sem parar.",
@@ -266,6 +281,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "45 minutos",
         "porcoes": 8,
+        "dificuldade": "facil",
         "instrucoes": [
             "Amasse as bananas com um garfo.",
             "Misture com os ovos, o acucar e o oleo.",
@@ -280,6 +296,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "1 hora + geladeira",
         "porcoes": 10,
+        "dificuldade": "dificil",
         "instrucoes": [
             "Faca uma calda: derreta o acucar em uma forma ate dourar.",
             "Bata no liquidificador o leite condensado, o leite e os ovos.",
@@ -295,6 +312,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "30 minutos + geladeira",
         "porcoes": 8,
+        "dificuldade": "facil",
         "instrucoes": [
             "Triture as bolachas e misture com a manteiga derretida.",
             "Forre o fundo de uma forma e leve ao forno por 10 minutos a 180 graus.",
@@ -309,6 +327,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "10 minutos",
         "porcoes": 2,
+        "dificuldade": "facil",
         "instrucoes": [
             "Bata a polpa de acai com banana no liquidificador.",
             "Se precisar, adicione um pouquinho de agua para ajudar a bater.",
@@ -322,6 +341,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "15 minutos + geladeira",
         "porcoes": 6,
+        "dificuldade": "facil",
         "instrucoes": [
             "Bata no liquidificador a polpa de maracuja com o leite condensado.",
             "Adicione o creme de leite e bata rapidamente (apenas para misturar).",
@@ -336,6 +356,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "45 minutos",
         "porcoes": 10,
+        "dificuldade": "facil",
         "instrucoes": [
             "Misture o fuba, a farinha, o acucar e o queijo ralado.",
             "Adicione os ovos, o leite e o oleo. Mexa bem.",
@@ -350,6 +371,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "30 minutos",
         "porcoes": 20,
+        "dificuldade": "facil",
         "instrucoes": [
             "Misture o coco ralado, o acucar e o leite condensado em uma panela.",
             "Adicione a manteiga e leve ao fogo medio.",
@@ -364,6 +386,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "20 minutos",
         "porcoes": 30,
+        "dificuldade": "facil",
         "instrucoes": [
             "Misture o leite condensado, o coco ralado e a manteiga em uma panela.",
             "Cozinhe em fogo medio, mexendo sem parar.",
@@ -378,6 +401,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "1 hora",
         "porcoes": 10,
+        "dificuldade": "medio",
         "instrucoes": [
             "Retire os graos das espigas de milho e reserve as palhas.",
             "Bata os graos no liquidificador com leite ate formar um creme.",
@@ -393,6 +417,7 @@ RECEITAS = [
         "categoria": "sobremesa",
         "tempo": "5 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Corte a goiabada em fatias de 1 cm de espessura.",
             "Corte o queijo minas em fatias semelhantes.",
@@ -401,15 +426,14 @@ RECEITAS = [
         ]
     },
 
-    # ============================================================
-    # LANCHES (10)
-    # ============================================================
+    # -- Lanches --
     {
         "nome": "Pao de Queijo",
         "ingredientes": ["polvilho azedo", "leite", "oleo", "ovo", "queijo minas", "sal"],
         "categoria": "lanche",
         "tempo": "30 minutos",
         "porcoes": 20,
+        "dificuldade": "medio",
         "instrucoes": [
             "Ferva o leite com o oleo e o sal.",
             "Despeje sobre o polvilho e misture bem (escaldar).",
@@ -425,6 +449,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "1 hora",
         "porcoes": 20,
+        "dificuldade": "dificil",
         "instrucoes": [
             "Cozinhe e desfie o frango. Refogue com cebola, alho e cream cheese.",
             "Para a massa: ferva agua com caldo de galinha e manteiga.",
@@ -441,6 +466,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "10 minutos",
         "porcoes": 1,
+        "dificuldade": "facil",
         "instrucoes": [
             "Bata os ovos com sal e pimenta.",
             "Derreta a manteiga em uma frigideira em fogo medio.",
@@ -456,6 +482,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "10 minutos",
         "porcoes": 1,
+        "dificuldade": "facil",
         "instrucoes": [
             "Peneire a goma de tapioca.",
             "Aqueca uma frigideira antiaderente e espalhe a goma formando um disco.",
@@ -470,6 +497,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "20 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Cozinhe e desfie o frango.",
             "Rale a cenoura e misture com o frango, o milho e a maionese.",
@@ -484,6 +512,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "1 hora",
         "porcoes": 12,
+        "dificuldade": "medio",
         "instrucoes": [
             "Massa: misture farinha, manteiga gelada, ovo e sal ate formar uma massa lisa.",
             "Recheio: refogue cebola, junte o frango desfiado, palmito e azeitona picados.",
@@ -499,6 +528,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "25 minutos",
         "porcoes": 20,
+        "dificuldade": "medio",
         "instrucoes": [
             "Misture a farinha, o acucar e o fermento.",
             "Adicione os ovos e o leite ate formar uma massa homogenea.",
@@ -514,6 +544,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "5 minutos",
         "porcoes": 1,
+        "dificuldade": "facil",
         "instrucoes": [
             "Passe manteiga nas fatias de pao.",
             "Coloque presunto e queijo entre as fatias.",
@@ -528,6 +559,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "30 minutos",
         "porcoes": 15,
+        "dificuldade": "facil",
         "instrucoes": [
             "Abra a massa folhada e corte em triangulos.",
             "Coloque uma salsicha na base de cada triangulo.",
@@ -542,6 +574,7 @@ RECEITAS = [
         "categoria": "lanche",
         "tempo": "15 minutos",
         "porcoes": 6,
+        "dificuldade": "facil",
         "instrucoes": [
             "Corte o pao em fatias e torre levemente.",
             "Pique os tomates em cubos pequenos.",
@@ -552,15 +585,14 @@ RECEITAS = [
         ]
     },
 
-    # ============================================================
-    # BEBIDAS (5)
-    # ============================================================
+    # -- Bebidas --
     {
         "nome": "Suco Verde Detox",
         "ingredientes": ["couve", "abacaxi", "gengibre", "limao", "agua", "hortela"],
         "categoria": "bebida",
         "tempo": "5 minutos",
         "porcoes": 2,
+        "dificuldade": "facil",
         "instrucoes": [
             "Lave bem a couve e a hortela.",
             "Descasque o abacaxi e corte em pedacos.",
@@ -574,6 +606,7 @@ RECEITAS = [
         "categoria": "bebida",
         "tempo": "5 minutos",
         "porcoes": 1,
+        "dificuldade": "facil",
         "instrucoes": [
             "Coloque a banana picada no liquidificador.",
             "Adicione o leite, a aveia e o mel.",
@@ -587,6 +620,7 @@ RECEITAS = [
         "categoria": "bebida",
         "tempo": "5 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Corte o limao em pedacos com casca.",
             "Bata no liquidificador com agua, acucar e gelo por apenas 5 segundos.",
@@ -601,6 +635,7 @@ RECEITAS = [
         "categoria": "bebida",
         "tempo": "20 minutos",
         "porcoes": 8,
+        "dificuldade": "medio",
         "instrucoes": [
             "Em uma panela, faca uma calda com acucar e agua.",
             "Adicione gengibre fatiado, canela em pau e cravo.",
@@ -616,6 +651,7 @@ RECEITAS = [
         "categoria": "bebida",
         "tempo": "5 minutos",
         "porcoes": 2,
+        "dificuldade": "facil",
         "instrucoes": [
             "Descasque a manga e corte em pedacos.",
             "Bata no liquidificador com agua e acucar.",
@@ -624,15 +660,14 @@ RECEITAS = [
         ]
     },
 
-    # ============================================================
-    # ACOMPANHAMENTOS (8)
-    # ============================================================
+    # -- Acompanhamentos --
     {
         "nome": "Farofa de Bacon",
         "ingredientes": ["farinha de mandioca", "bacon", "cebola", "ovo", "manteiga", "sal", "cheiro verde"],
         "categoria": "acompanhamento",
         "tempo": "15 minutos",
         "porcoes": 6,
+        "dificuldade": "facil",
         "instrucoes": [
             "Frite o bacon picado ate ficar crocante.",
             "Adicione a cebola picada e refogue.",
@@ -647,6 +682,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "10 minutos",
         "porcoes": 6,
+        "dificuldade": "facil",
         "instrucoes": [
             "Pique o tomate, a cebola e o pimentao em cubos bem pequenos.",
             "Misture tudo em uma tigela.",
@@ -661,6 +697,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "10 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Lave e corte a couve em tiras finas.",
             "Frite o bacon picado ate ficar crocante (opcional).",
@@ -675,6 +712,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "25 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Descasque as batatas e corte em pedacos.",
             "Cozinhe em agua salgada ate ficarem macias.",
@@ -689,6 +727,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "20 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Lave o arroz ate a agua ficar clara.",
             "Aqueca o oleo e doure o alho.",
@@ -703,6 +742,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "30 minutos",
         "porcoes": 6,
+        "dificuldade": "medio",
         "instrucoes": [
             "Cozinhe o feijao e escorra (deixe os graos inteiros).",
             "Frite o bacon e a linguica em pedacos.",
@@ -719,6 +759,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "30 minutos + geladeira",
         "porcoes": 8,
+        "dificuldade": "facil",
         "instrucoes": [
             "Cozinhe a batata e a cenoura cortadas em cubos.",
             "Escorra e espere esfriar completamente.",
@@ -734,6 +775,7 @@ RECEITAS = [
         "categoria": "acompanhamento",
         "tempo": "10 minutos",
         "porcoes": 4,
+        "dificuldade": "facil",
         "instrucoes": [
             "Descasque a banana da terra e corte em rodelas na diagonal.",
             "Aqueca o oleo em uma frigideira.",

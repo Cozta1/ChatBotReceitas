@@ -160,13 +160,13 @@ ENCORAJAMENTOS = ["Otimo!", "Muito bem!", "Perfeito!", "Mandou bem!", "Continue 
 # Respostas variadas
 SAUDACOES = [
     ("Ola! Sou o ChefBot, seu assistente culinario!\n"
-     "Me diga quais ingredientes voce tem ou peca uma receita por categoria.\n\n"
+     "Me diga quais ingredientes você tem ou peça uma receita por categoria.\n\n"
      "O que vamos cozinhar hoje?"),
-    ("Fala! Sou o ChefBot, pronto para cozinhar com voce!\n"
+    ("Fala! Sou o ChefBot, pronto para cozinhar com você!\n"
      "Me conta o que tem na geladeira ou escolha uma categoria de receita.\n\n"
      "O que vamos preparar?"),
     ("Boa! ChefBot aqui, especialista em receitas brasileiras!\n"
-     "Me diga os ingredientes que voce tem ou o que quer cozinhar.\n\n"
+     "Me diga os ingredientes que você tem ou o que quer cozinhar.\n\n"
      "Me conta, o que tem por ai?"),
 ]
 DESPEDIDAS = [

@@ -1,290 +1,323 @@
-import random, string, unicodedata
-import nltk, numpy as np
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-from sklearn.naive_bayes import MultinomialNB
+"""ChefBot — orquestrador hibrido (KB -> LLM fallback).
+
+Fluxo no estado inicio:
+  pergunta culinaria (interrogativa)? -> FAQ TF-IDF -> LLM
+  intent confiavel?                   -> handler especifico
+  fallback                            -> nome -> ingredientes -> FAQ -> LLM
+"""
+import random
+import time
+
+import kb
+import llm
 from receitas import RECEITAS
-from dados import (
-    DADOS_TREINO, SAUDACOES, DESPEDIDAS, AGRADECIMENTOS, AJUDA,
-    SINAIS_CONFIRMACAO, SINAIS_COMPLETO, SINAIS_CANCELAR,
-    POSITIVOS, NEGATIVOS, ENCORAJAMENTOS,
+from nlp import detectar_intencao, normalizar, tokenizar
+
+
+# Mensagens e sinais
+SAUDACOES = [
+    "Ola! Sou o ChefBot. Diga 'ajuda' para ver o que faco. O que vamos cozinhar?",
+    "Fala! ChefBot na area. Quer ajuda? Digite 'ajuda'.",
+    "Boa! Especialista em receitas brasileiras. O que vai preparar hoje?",
+]
+DESPEDIDAS = ["Tchau! Bom apetite!", "Ate mais!", "Ate logo, bom prato!"]
+AGRADECIMENTOS = ["De nada!", "Por nada, qualquer duvida e so chamar.", "Disponha!"]
+AJUDA = (
+    "Posso te ajudar com:\n"
+    "  - INGREDIENTES: 'tenho frango, alho e cebola'\n"
+    "  - NOME: 'receita de feijoada'\n"
+    "  - CATEGORIA: prato principal, sobremesa, lanche, bebida, acompanhamento\n"
+    "  - ALEATORIA: 'me surpreenda'\n"
+    "  - DUVIDAS: tecnicas, substituicoes, conservacao (uso a base ou consulto o LLM)\n"
+    "  - PASSO A PASSO: apos escolher, 'pronto' avanca e 'manda tudo' entrega completa"
+)
+ENCORAJAMENTOS = ["Otimo!", "Muito bem!", "Perfeito!", "Mandou bem!"]
+SUGESTOES_FIM = ["Que tal uma sobremesa?", "Vamos pra um lanche?", "Que tal algo para beber?"]
+
+POSITIVOS = ("gostei", "otimo", "delicioso", "perfeito", "amei", "adorei",
+             "ficou bom", "ficou gostoso", "ficou otimo", "ficou show",
+             "deu certo", "maravilhoso", "excelente")
+NEGATIVOS = ("nao gostei", "ficou ruim", "ficou horrivel", "horrivel",
+             "horrivel", "pessimo", "ruim", "errei", "queimou",
+             "deu errado", "estragou", "passou do ponto")
+
+SINAIS = {
+    "cancelar": ("cancelar", "outra receita", "esquece", "desisti", "recomecar"),
+    "completo": ("manda tudo", "receita completa", "quero tudo", "manda direto"),
+    "confirmar": ("pronto", "feito", "ja fiz", "proximo", "continua",
+                  "terminei", "ok feito"),
+}
+SIM = ("sim", "claro", "pode", "vamos", "ok", "bora", "topo", "aceito")
+NAO = ("nao", "nop", "outro", "outra", "muda", "passa", "proxima", "proximo")
+INTERROGATIVAS = (
+    "como ", "qual ", "quais ", "porque ", "por que ", "o que ", "oq ",
+    "o q ", "para que ", "quando ", "onde ", "quanto ", "quem ",
+    "me explica", "me explique", "explique ", "explica ",
+    "me fale", "fale sobre", "me conte", "conte sobre",
+    "me de uma resposta", "me da uma resposta", "continue dissertando",
+    "continue falando", "me ajuda a entender",
 )
 
-for p in ('punkt', 'punkt_tab', 'stopwords', 'wordnet', 'omw-1.4'):
-    nltk.download(p, quiet=True)
+ESTATISTICAS = {"total": 0, "base": 0, "llm": 0,
+                "tempo_base_ms": 0.0, "tempo_llm_ms": 0.0}
 
-lematizador = WordNetLemmatizer()
-stopwords_pt = set(stopwords.words('portuguese'))
-
-def normalizar(texto):
-    sem_acento = unicodedata.normalize('NFKD', texto.lower())
-    return ''.join(c for c in sem_acento if not unicodedata.combining(c))
-
-def tokenizar(texto, filtrar_sw=False):
-    tokens = [t for t in word_tokenize(normalizar(texto), language='portuguese')
-              if t not in string.punctuation and len(t) > 1]
-    if filtrar_sw:
-        tokens = [t for t in tokens if t not in stopwords_pt]
-    return [lematizador.lemmatize(t, pos='v') for t in tokens]
-
-# Classificador
-tokens_treino = [tokenizar(f) for f, _ in DADOS_TREINO]
-labels_treino = [l for _, l in DADOS_TREINO]
-vocabulario = sorted(set(p for f in tokens_treino for p in f))
-indice = {p: i for i, p in enumerate(vocabulario)}
-
-def vetor(tokens):
-    v = np.zeros(len(vocabulario))
-    for t in tokens:
-        if t in indice: v[indice[t]] = 1
-    return v
-
-clf = MultinomialNB()
-clf.fit(np.array([vetor(t) for t in tokens_treino]), labels_treino)
-
-def detectar_intencao(tokens):
-    if not tokens: return "buscar_por_ingredientes"
-    v = vetor(tokens).reshape(1, -1)
-    probs = clf.predict_proba(v)[0]
-    return clf.predict(v)[0] if probs.max() >= probs.mean() * 1.5 else "buscar_por_ingredientes"
-
-# Busca
-GENERICAS = {"receita","receitas","fazer","preparar","cozinhar","quero","uma","tem","como","busca","mostra"}
-
-def buscar_por_nome(texto):
-    palavras = [p for p in normalizar(texto).split() if len(p) > 2 and p not in GENERICAS]
-    if not palavras: return []
-    res = []
-    for r in RECEITAS:
-        partes = [p for p in normalizar(r["nome"]).split() if len(p) > 2]
-        score = sum(1 for p in partes if any(p in u or u in p for u in palavras))
-        if score: res.append((r, score))
-    res.sort(key=lambda x: -x[1])
-    return [r for r, _ in res[:3]]
-
-def buscar_por_categoria(cat):
-    return [r for r in RECEITAS if r["categoria"] == cat]
-
-def buscar_por_ingredientes(palavras):
-    res = []
-    for r in RECEITAS:
-        ings = " ".join(normalizar(i) for i in r["ingredientes"])
-        matches = sum(1 for p in palavras if len(p) > 2 and p in ings)
-        if matches: res.append((r, matches))
-    res.sort(key=lambda x: -x[1])
-    return [r for r, _ in res[:3]]
 
 # Sessao
 def nova_sessao():
-    return {"estado":"inicio", "receita":None, "candidatas":[], "candidata_atual":0,
-            "pergunta_tipo":None, "passo_atual":0, "historico":[]}
+    return {"estado": "inicio", "receita": None, "candidatas": [],
+            "candidata_atual": 0, "pergunta_tipo": None, "passo_atual": 0,
+            "historico": []}
 
-def resetar(sessao):
-    sessao.update(estado="inicio", receita=None, candidatas=[], candidata_atual=0,
-                  pergunta_tipo=None, passo_atual=0)
 
-# Formatacao e passos
-def formatar_receita(r):
-    linha = "=" * 46
-    ings = "\n".join(f"- {i.capitalize()}" for i in r["ingredientes"])
-    passos = "\n".join(f"{i+1}. {p}" for i, p in enumerate(r["instrucoes"]))
-    return (f"\n{linha}\n {r['nome'].upper()}\n{linha}\n"
-            f"Tempo: {r['tempo']} | Porcoes: {r['porcoes']} | Dificuldade: {r.get('dificuldade','?').title()}\n\n"
-            f"INGREDIENTES:\n{ings}\n\n  MODO DE PREPARO:\n{passos}\n{linha}")
+def resetar(s):
+    # historico nao e zerado, mantem o contexto da conversa
+    s.update(estado="inicio", receita=None, candidatas=[], candidata_atual=0,
+             pergunta_tipo=None, passo_atual=0)
+
+
+def contem(texto, lista):
+    return any(p in texto for p in lista)
+
+
+def parece_pergunta(t):
+    return t.endswith("?") or t.startswith(INTERROGATIVAS)
+
+
+def _r_base(texto, t0, marcador="base"):
+    dt = (time.time() - t0) * 1000
+    ESTATISTICAS["base"] += 1
+    ESTATISTICAS["total"] += 1
+    ESTATISTICAS["tempo_base_ms"] += dt
+    return {"texto": texto, "fonte": marcador, "tempo_ms": round(dt, 1)}
+
+
+def _r_llm(pergunta, sessao, contexto=""):
+    t0 = time.time()
+    historico = sessao.get("historico", [])
+    texto = llm.responder(pergunta, historico=historico, contexto=contexto)
+    dt = (time.time() - t0) * 1000
+    ESTATISTICAS["llm"] += 1
+    ESTATISTICAS["total"] += 1
+    ESTATISTICAS["tempo_llm_ms"] += dt
+    return {"texto": texto, "fonte": "llm", "tempo_ms": round(dt, 1)}
+
+
+
+# Fluxo (sondagem -> passo a passo -> conclusao)
+
+def _formatar_sugestao(r):
+    return (f"Que tal '{r['nome']}'?\n"
+            f"Tempo: {r['tempo']} | Dificuldade: {r.get('dificuldade','?').title()}\n\n"
+            f"Voce toparia fazer essa receita?")
+
+
+def iniciar_sondagem(candidatas, s):
+    s.update(candidatas=list(candidatas), candidata_atual=0,
+             pergunta_tipo="sugestao", estado="sondagem")
+    return _formatar_sugestao(s["candidatas"][0])
+
+
+def cancelar(s):
+    resetar(s)
+    return "Cancelei. O que voce gostaria de cozinhar agora?"
+
+
+def entregar_completa(s):
+    s["estado"] = "conclusao"
+    return f"Aqui esta a receita completa:{kb.formatar_receita(s['receita'])}\n\nMe diz quando terminar!"
+
 
 def mostrar_passo(s):
-    i = s["passo_atual"]
-    return f"[ Passo {i+1} de {len(s['receita']['instrucoes'])} ]\n  >> {s['receita']['instrucoes'][i]}\n\nMe avisa quando terminar!"
+    i, total = s["passo_atual"], len(s["receita"]["instrucoes"])
+    return f"[ Passo {i+1}/{total} ]\n  >> {s['receita']['instrucoes'][i]}\n\nMe avisa quando terminar!"
+
 
 def proximo_passo(s):
     s["passo_atual"] += 1
     if s["passo_atual"] >= len(s["receita"]["instrucoes"]):
         s["estado"] = "conclusao"
-        return f"Ultimo passo concluido! Parabens, '{s['receita']['nome']}' esta pronto!\n\nComo ficou o prato? Deu tudo certo?"
+        return f"Concluido! '{s['receita']['nome']}' esta pronto!\n\nComo ficou?"
     return random.choice(ENCORAJAMENTOS) + "\n\n" + mostrar_passo(s)
 
-def entregar_completa(s):
-    s["estado"] = "conclusao"
-    return f"Claro! Aqui esta a receita completa:{formatar_receita(s['receita'])}\n\nMe diz quando terminar de preparar, tudo bem?"
-
-def cancelar(s):
-    resetar(s)
-    return "Sem problema, cancelei essa receita! O que voce gostaria de cozinhar agora?"
-
-def iniciar_busca(candidatas, s):
-    s.update(candidatas=list(candidatas), candidata_atual=0, pergunta_tipo=None, estado="sondagem")
-    return sugerir_receita(s)
-
-
-PALAVRAS_SIM = ["sim","claro","pode","vamos","ok","legal","bora","topo","aceito","adorei","perfeito","gostei","combinado","show"]
-PALAVRAS_NAO = ["nao","noa","nop","prefiro","outro","outra","muda","diferente","nope","passa","proxima","proximo"]
-
-
-def sugerir_receita(s):
-    r = s["candidatas"][s["candidata_atual"]]
-    s["pergunta_tipo"] = "sugestao"
-    return (f"Que tal '{r['nome']}'?\nTempo: {r['tempo']} | Dificuldade: {r.get('dificuldade','?').title()}\n\n"
-            f"Voce toparia fazer essa receita?")
-
-MSG_OPCOES = ("Posso te ajudar de outras formas:\n"
-              "  - Diga os ingredientes que voce tem e sugiro algo\n"
-              "  - Peca uma categoria: prato principal, sobremesa, lanche...\n"
-              "  - Ou peca uma receita aleatoria!\n\nO que voce prefere?")
 
 def resposta_sondagem(texto, s):
     tipo = s["pergunta_tipo"]
-    sim = any(p in texto for p in PALAVRAS_SIM)
-    nao = any(p in texto for p in PALAVRAS_NAO)
+    sim, nao = contem(texto, SIM), contem(texto, NAO)
+    r = s["candidatas"][s["candidata_atual"]]
 
     if tipo == "sugestao":
         if nao and not sim:
             restantes = len(s["candidatas"]) - s["candidata_atual"] - 1
             if restantes <= 0:
                 s["estado"] = "inicio"
-                return f"Poxa, era a ultima opcao que eu tinha!\n\n{MSG_OPCOES}"
+                return "Era a ultima opcao! Quer pedir algo diferente?"
             s["pergunta_tipo"] = "confirmar_proxima"
-            return f"Tudo bem! Tenho mais {restantes} {'opcoes' if restantes > 1 else 'opcao'} guardada. Quer ver a proxima?"
+            return f"Tudo bem! Tenho mais {restantes} opcao(oes). Quer ver a proxima?"
         if not sim:
-            return "Nao entendi! Quer fazer essa receita? Pode dizer 'sim' ou 'nao'."
+            return "Quer fazer essa? Diz 'sim' ou 'nao'."
         s["pergunta_tipo"] = "confirmar_ingredientes"
-        r = s["candidatas"][s["candidata_atual"]]
-        return f"Otima escolha! Posso te passar a lista de ingredientes do '{r['nome']}'?"
+        return f"Otimo! Te passo a lista de ingredientes do '{r['nome']}'?"
 
     if tipo == "confirmar_proxima":
         if nao and not sim:
             s["estado"] = "inicio"
-            return f"Sem problema! {MSG_OPCOES}"
+            return "Sem problema! O que mais posso fazer?"
         if not sim:
-            return "Quer ver a proxima opcao? Pode dizer 'sim' ou 'nao'."
+            return "Sim ou nao?"
         s["candidata_atual"] += 1
-        return sugerir_receita(s)
+        s["pergunta_tipo"] = "sugestao"
+        return _formatar_sugestao(s["candidatas"][s["candidata_atual"]])
 
     if tipo == "confirmar_ingredientes":
         if nao and not sim:
             s["estado"] = "inicio"
-            return "Tudo bem! Se quiser outra receita, e so chamar. O que mais posso fazer por voce?"
-        r = s["candidatas"][s["candidata_atual"]]
+            return "Tudo bem! Se quiser outra, e so chamar."
         s["receita"] = r
         lista = "\n".join(f" - {i.capitalize()}" for i in r["ingredientes"])
         s["pergunta_tipo"] = "confirmar_passos"
-        return f"Aqui estao os ingredientes do '{r['nome']}':\n\n{lista}\n\nJa tem tudo? Posso comecar o passo a passo?"
+        return f"Ingredientes do '{r['nome']}':\n\n{lista}\n\nJa tem tudo? Comeco o passo a passo?"
 
     if tipo == "confirmar_passos":
         if nao and not sim:
             s["estado"] = "inicio"
             s["receita"] = None
-            return "Sem problema! Quando tiver os ingredientes, e so me chamar.\n\nQuer que eu sugira outra receita?"
+            return "Quando tiver tudo, me chame!"
         s["estado"] = "passo_a_passo"
         s["passo_atual"] = 0
-        return "Vamos la! Diga 'pronto' ao terminar cada passo, ou 'manda tudo' para a receita completa.\n\n" + mostrar_passo(s)
+        return ("Vamos la! 'pronto' avanca, 'manda tudo' entrega completa.\n\n"
+                + mostrar_passo(s))
 
-    return sugerir_receita(s)
+    return _formatar_sugestao(r)
 
-# Conclusao
-SUGESTOES_FIM = [
-    "Que tal preparar uma sobremesa agora?", "O que acha de um lanche rapido?",
-    "Agora vamos preparar uma sobremesa?", "Que tal algo para beber?",
-    "Que tal partir para um prato principal?", "O que acha de um acompanhamento?",
-]
 
 def processar_conclusao(msg, s):
     texto = normalizar(msg)
     nome = s["receita"]["nome"] if s["receita"] else "prato"
     sug = random.choice(SUGESTOES_FIM)
     resetar(s)
-    if any(p in texto for p in POSITIVOS):
-        m = random.choice([f"Que otimo! '{nome}' ficou uma delicia!", f"Arrasou! '{nome}' feito com sucesso!", "Excelente! Tenho certeza que ficou gostoso."])
-    elif any(p in texto for p in NEGATIVOS):
-        m = random.choice(["Que pena! Mas faz parte do aprendizado.", "Nao desanime! Cozinhar se aprende com pratica."])
+    if contem(texto, POSITIVOS):
+        m = f"Que otimo! '{nome}' ficou uma delicia!"
+    elif contem(texto, NEGATIVOS):
+        m = "Que pena! Mas faz parte do aprendizado."
     else:
-        m = random.choice(["Espero que tenha ficado otimo!", "Que bom cozinhar com voce!", "Obrigado por cozinhar comigo!"])
+        m = "Espero que tenha ficado bom!"
     return f"{m}\n\n{sug}"
 
-# Resposta
+
+
+def _tenta_faq(mensagem, t0):
+    res = kb.buscar_faq(mensagem)
+    if res is None:
+        return None
+    return _r_base(f"{res.dados}\n\n[FAQ, sim {res.confianca:.2f}]", t0, "base-faq")
+
+
 def gerar_resposta(mensagem, sessao):
-    tokens = tokenizar(mensagem, filtrar_sw=True)
+    resp = _gerar(mensagem, sessao)
+    # registra no historico (limite de ~12 trocas para nao estourar contexto)
+    hist = sessao.setdefault("historico", [])
+    hist.append({"user": mensagem, "bot": resp["texto"]})
+    sessao["historico"] = hist[-12:]
+    return resp
+
+
+def _gerar(mensagem, sessao):
+    if not mensagem or not mensagem.strip():
+        return _r_base("Nao entendi. Pode reformular?", time.time())
+
+    t0 = time.time()
     texto = normalizar(mensagem)
     estado = sessao["estado"]
 
+    #passo a passo
     if estado == "passo_a_passo":
-        if any(s in texto for s in SINAIS_CANCELAR): return cancelar(sessao)
-        if any(s in texto for s in SINAIS_COMPLETO): return entregar_completa(sessao)
-        if any(s in texto for s in SINAIS_CONFIRMACAO): return proximo_passo(sessao)
-        if tokens:
-            intent = detectar_intencao(tokens)
-            if intent == "despedida":
-                resetar(sessao)
-                return random.choice(DESPEDIDAS)
-            if intent == "agradecimento":
-                return random.choice(AGRADECIMENTOS) + f"\n\nMas ainda estamos no passo {sessao['passo_atual']+1}! Pronto para continuar?"
-            if intent == "ajuda":
-                return (f"Estamos cozinhando '{sessao['receita']['nome']}'!\n"
-                        "  - 'pronto' para o proximo passo\n  - 'manda tudo' para a receita completa\n"
-                        "  - 'cancelar' para escolher outra\n\nQuer continuar?")
-        return "Hmm, nao entendi! Diz 'pronto' quando terminar este passo.\n\n" + mostrar_passo(sessao)
+        if contem(texto, SINAIS["cancelar"]):
+            return _r_base(cancelar(sessao), t0)
+        if contem(texto, SINAIS["completo"]):
+            return _r_base(entregar_completa(sessao), t0)
+        if contem(texto, SINAIS["confirmar"]):
+            return _r_base(proximo_passo(sessao), t0)
+        intent, conf = detectar_intencao(mensagem)
+        if conf and intent == "despedida":
+            resetar(sessao)
+            return _r_base(random.choice(DESPEDIDAS), t0)
+        if conf and intent == "ajuda":
+            return _r_base(f"Cozinhando '{sessao['receita']['nome']}'. "
+                           "Use 'pronto', 'manda tudo' ou 'cancelar'.", t0)
+        return _r_base("Diz 'pronto' quando terminar.\n\n" + mostrar_passo(sessao), t0)
 
+    #sondagem
     if estado == "sondagem":
-        if any(s in texto for s in SINAIS_CANCELAR): return cancelar(sessao)
-        if any(s in texto for s in SINAIS_COMPLETO):
+        if contem(texto, SINAIS["cancelar"]):
+            return _r_base(cancelar(sessao), t0)
+        if contem(texto, SINAIS["completo"]):
             sessao["receita"] = sessao["candidatas"][sessao["candidata_atual"]]
-            return entregar_completa(sessao)
-        return resposta_sondagem(texto, sessao)
+            return _r_base(entregar_completa(sessao), t0)
+        if parece_pergunta(texto):
+            resetar(sessao)  # escape: usuario perguntou algo culinario
+        else:
+            return _r_base(resposta_sondagem(texto, sessao), t0)
 
-    if estado == "conclusao":
-        return processar_conclusao(mensagem, sessao)
+    #conclusao
+    if sessao["estado"] == "conclusao":
+        return _r_base(processar_conclusao(mensagem, sessao), t0)
 
-    # estado inicio
-    if not tokens:
-        return "Nao entendi. Tente listar ingredientes ou use 'ajuda'. O que voce gostaria de fazer?"
-    if any(s in texto for s in SINAIS_CANCELAR):
-        return "Nao ha nada para cancelar agora. O que voce gostaria de cozinhar?"
+    #inicio
+    if contem(texto, SINAIS["cancelar"]):
+        return _r_base("Nao ha nada para cancelar agora. O que quer cozinhar?", t0)
 
-    intent = detectar_intencao(tokens)
+    # perguntas culinarias claras vao direto pra FAQ/LLM
+    if parece_pergunta(texto):
+        return _tenta_faq(mensagem, t0) or _r_llm(mensagem, sessao)
 
-    if intent == "saudacao": return random.choice(SAUDACOES)
-    if intent == "despedida": return random.choice(DESPEDIDAS)
-    if intent == "agradecimento": return random.choice(AGRADECIMENTOS)
-    if intent == "ajuda": return AJUDA
+    intent, conf = detectar_intencao(mensagem)
+    if conf:
+        if intent == "saudacao": return _r_base(random.choice(SAUDACOES), t0)
+        if intent == "despedida": return _r_base(random.choice(DESPEDIDAS), t0)
+        if intent == "agradecimento": return _r_base(random.choice(AGRADECIMENTOS), t0)
+        if intent == "ajuda": return _r_base(AJUDA, t0)
+        if intent == "receita_aleatoria":
+            return _r_base(iniciar_sondagem(random.sample(RECEITAS, 3), sessao), t0)
+        if intent == "buscar_por_nome":
+            cands = kb.buscar_por_nome(mensagem)
+            if cands:
+                return _r_base(iniciar_sondagem(cands, sessao), t0)
+        elif intent.startswith("categoria:"):
+            recs = kb.buscar_por_categoria(intent.split(":", 1)[1])
+            if recs:
+                amostra = random.sample(recs, min(3, len(recs)))
+                return _r_base(iniciar_sondagem(amostra, sessao), t0)
+        elif intent == "buscar_por_ingredientes":
+            cands = kb.buscar_por_ingredientes(tokenizar(mensagem))
+            if cands:
+                return _r_base(iniciar_sondagem(cands, sessao), t0)
 
-    if intent == "buscar_por_nome":
-        cands = buscar_por_nome(mensagem)
-        if cands: return iniciar_busca(cands, sessao)
-        return "Nao encontrei essa receita. Quer tentar outro nome ou categoria?"
+    #nome -> ingredientes -> FAQ -> LLM
+    cands = kb.buscar_por_nome(mensagem) or kb.buscar_por_ingredientes(tokenizar(mensagem))
+    if cands:
+        return _r_base(iniciar_sondagem(cands, sessao), t0)
 
-    if intent == "receita_aleatoria":
-        return iniciar_busca(random.sample(RECEITAS, 3), sessao)
+    faq = _tenta_faq(mensagem, t0)
+    if faq:
+        return faq
 
-    if intent.startswith("categoria:"):
-        cat = intent.split(":", 1)[1]
-        recs = buscar_por_categoria(cat)
-        if not recs: return f"Nao encontrei receitas na categoria '{cat}'. Quer tentar outra?"
-        return iniciar_busca(random.sample(recs, min(3, len(recs))), sessao)
+    relacionadas = kb.buscar_por_ingredientes(tokenizar(mensagem))[:2]
+    contexto = ""
+    if relacionadas:
+        contexto = "Receitas relacionadas:\n" + "\n".join(
+            kb.resumo_receita(r) for r in relacionadas)
+    return _r_llm(mensagem, sessao, contexto=contexto)
 
-    # fallback: tenta nome, depois ingredientes
-    cands = buscar_por_nome(mensagem) or buscar_por_ingredientes(tokens)
-    if cands: return iniciar_busca(cands, sessao)
 
-    if any(p in texto for p in ["receita","cozinhar","fazer","comer","algo","sugestao"]):
-        return iniciar_busca(random.sample(RECEITAS, 3), sessao)
-
-    return ("Nao entendi bem o que voce quer.\n"
-            "Tente listar ingredientes como 'Tenho frango e arroz', ou peca uma categoria.\n\n"
-            "Posso te ajudar de outra forma?")
-
-def main():
-    sessao = nova_sessao()
-    print("CHEFBOT - Seu Assistente de Receitas\nDigite 'sair' para encerrar")
-    print(f"\nChefBot: {AJUDA}\n")
-    while True:
-        entrada = input("Voce: ").strip()
-        if not entrada: continue
-        if entrada.lower() in ('sair', 'exit', 'quit'):
-            print("\nChefBot: Tchau! Bom apetite!")
-            break
-        resposta = gerar_resposta(entrada, sessao)
-        sessao["historico"].append((entrada, resposta))
-        print(f"\nChefBot: {resposta}\n")
-
-if __name__ == '__main__':
-    main()
+#estatisticas
+def stats():
+    s = ESTATISTICAS
+    total = s["total"] or 1
+    return {
+        "total": s["total"], "base": s["base"], "llm": s["llm"],
+        "pct_base": round(100 * s["base"] / total, 1),
+        "pct_llm": round(100 * s["llm"] / total, 1),
+        "tempo_medio_base_ms": round(s["tempo_base_ms"] / max(s["base"], 1), 1),
+        "tempo_medio_llm_ms": round(s["tempo_llm_ms"] / max(s["llm"], 1), 1),
+        "llm_status": llm.status(),
+    }

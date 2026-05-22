@@ -1,123 +1,86 @@
-# 🍳 ChefBot - Chatbot de Receitas
+# ChefBot - Chatbot Hibrido de Receitas (NLTK + LLM)
 
-## Descrição
+Chatbot tematico de culinaria desenvolvido como Trabalho Final de IA e ML.
+Implementa arquitetura **hibrida**: base de conhecimento estruturada
+consultada **antes** do LLM, com fallback automatico quando a base nao
+tem resposta confiavel.
 
-O **ChefBot** é um chatbot temático desenvolvido em Python que auxilia usuários na busca de receitas de forma interativa.
-O usuário pode informar ingredientes, nomes de pratos ou categorias, e o sistema retorna receitas compatíveis.
+## Arquitetura
 
----
-
-## 🚀 Funcionalidades
-
-* 🔎 Busca de receitas por ingredientes
-* 📖 Busca por nome da receita
-* 🎲 Sugestão de receita aleatória
-* 🧠 Classificação de intenção com NLP (NLTK + Naive Bayes)
-* 💬 Interface web interativa
-
----
-
-## 🛠️ Tecnologias utilizadas
-
-* Python
-* Flask
-* NLTK (Natural Language Toolkit)
-* Scikit-learn
-* HTML, CSS e JavaScript
-
----
-
-## 🧠 Como funciona
-
-O chatbot utiliza técnicas de Processamento de Linguagem Natural (NLP) para interpretar a entrada do usuário:
-
-* Tokenização de texto
-* Remoção de stopwords
-* Lematização
-* Classificação de intenção com Naive Bayes
-
-Com base na intenção identificada, o sistema realiza buscas nas receitas cadastradas e retorna os resultados mais relevantes.
-
----
-
-## ▶️ Como executar o projeto
-
-### 1. Clonar o repositório
-
-```bash
-git clone https://github.com/Cozta1/ChatBotReceitas.git
-cd ChatBotReceitas
+```
+                     +------------------+
+   Mensagem -------> |  NLP (NLTK)      |  tokenizacao, stopwords,
+                     |  + Naive Bayes   |  lematizacao, intent class.
+                     +--------+---------+
+                              |
+                  intencao + confianca
+                              |
+                     +--------v---------+
+                     | Base estruturada |  receitas, FAQ (TF-IDF)
+                     +--------+---------+
+                              |
+              base resolveu?  |  nao -> fallback
+                              v
+                     +--------+---------+
+                     | LLM (Qwen2.5-7B) |  4-bit NF4 na GPU
+                     +------------------+
 ```
 
-### 2. Criar ambiente virtual
+## Componentes
 
-```bash
+| Arquivo | Funcao |
+|---|---|
+| [nlp.py](nlp.py) | Pre-processamento NLTK + classificador de intencao (Naive Bayes) |
+| [kb.py](kb.py) | Base de conhecimento: receitas + FAQ culinaria (busca TF-IDF) |
+| [receitas.py](receitas.py) | Dataset estruturado de receitas |
+| [llm.py](llm.py) | Qwen2.5-3B-Instruct em fp16 (GPU) |
+| [chatbot.py](chatbot.py) | Orquestrador: aplica o fluxo KB -> LLM |
+| [app.py](app.py) | Servidor Flask com endpoints `/chat`, `/stats`, `/chat/reset` |
+
+## Modelo LLM
+
+**Qwen/Qwen2.5-3B-Instruct** carregado em **fp16** diretamente na GPU.
+- VRAM: ~6 GB (cabe na RTX 4060 8GB)
+- Sem gating no Hugging Face
+- Multilingue forte (PT-BR nativo na geracao)
+- Tempo de resposta ~1s na RTX 4060
+- Carregamento lazy + pre-load em thread de fundo
+- Sem quantizacao, stack minimo (so torch + transformers)
+
+## Como rodar
+
+```powershell
 python -m venv venv
-```
-
-### 3. Ativar o ambiente virtual
-
-**Windows:**
-
-```bash
 venv\Scripts\activate
-```
-
-**Linux/Mac:**
-
-```bash
-source venv/bin/activate
-```
-
-### 4. Instalar dependências
-
-```bash
 pip install -r requirements.txt
-```
-
-### 5. Executar o projeto
-
-```bash
 python app.py
 ```
 
-### 6. Acessar no navegador
+Acesse http://127.0.0.1:5000
 
-```
-http://127.0.0.1:5000
-```
+> Primeira chamada que cair no LLM faz o download dos pesos (~5 GB).
+> O `precarregar_async()` em `app.py` ja inicia esse download assim que o
+> servidor sobe, em segundo plano.
 
----
+## Endpoints
 
-## 📁 Estrutura do projeto
+- `POST /chat` -> `{ "resposta": str, "fonte": "base|base-faq|llm", "tempo_ms": float }`
+- `GET /stats` -> contadores de uso da base vs LLM, tempo medio, status do LLM
+- `POST /chat/reset` -> limpa sessao
 
-```
-projeto/
-│
-├── app.py
-├── chatbot.py
-├── receitas.py
-├── dados.py
-│
-├── templates/
-│   └── index.html
-│
-└── static/
-    └── script.js
-```
+## Para a apresentacao (checkpoint)
 
----
+O endpoint `/stats` ja fornece:
+- Taxa de respostas resolvidas pela base
+- Taxa de uso do LLM
+- Tempo medio de resposta de cada caminho
 
-## 👥 Integrantes
+Util para a secao "Resultados e Discussao" do trabalho.
 
-* Gabriel Krepker
-* Gabriel Monteiro
-* Gustavo Lopes
-* João Victor da Costa
-* Rafael Lima Henriques
+## Integrantes
 
----
-
-## 📄 Licença
-
-Projeto desenvolvido para fins acadêmicos.
+- Gabriel Krepker
+- Gabriel Monteiro
+- Gustavo Lopes
+- Joao Victor da Costa
+- Rafael Lima Henriques

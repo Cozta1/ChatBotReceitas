@@ -74,6 +74,40 @@ def status():
     return "nao iniciado"
 
 
+def classificar(mensagem: str, intencoes: list[str],
+                historico: list[dict] | None = None) -> str:
+    """Agente 1: classifica a intencao (saida estruturada, deterministica).
+
+    Reusa o mesmo Qwen ja carregado — sem custo extra de VRAM. Retorna uma
+    das `intencoes` ou "" (LLM indisponivel ou resposta fora da lista ->
+    caller segue para o fluxo de fallback).
+    """
+    try:
+        pipe = _carregar()
+    except Exception:
+        return ""
+
+    sistema = (
+        "Voce classifica a mensagem de um usuario de um chatbot de receitas. "
+        "Responda APENAS com uma destas intencoes, sem explicar nem pontuar: "
+        + ", ".join(intencoes)
+    )
+    mensagens = [{"role": "system", "content": sistema}]
+    for turno in (historico or [])[-3:]:
+        mensagens.append({"role": "user", "content": turno["user"]})
+        mensagens.append({"role": "assistant", "content": turno["bot"]})
+    mensagens.append({"role": "user", "content": mensagem})
+
+    from transformers import GenerationConfig
+    gen = GenerationConfig(max_new_tokens=12, do_sample=False,
+                           pad_token_id=_tok.eos_token_id)
+    saida = pipe(mensagens, generation_config=gen)
+    out = saida[0]["generated_text"]
+    resposta = (out[-1]["content"] if isinstance(out, list) else str(out)).lower()
+    resposta = resposta.replace(": ", ":")  # modelo as vezes escreve "categoria: bebida"
+    return next((i for i in intencoes if i in resposta), "")
+
+
 def responder(pergunta: str, historico: list[dict] | None = None,
               contexto: str = "") -> str:
     """Gera resposta usando o LLM.

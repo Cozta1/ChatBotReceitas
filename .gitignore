@@ -1,8 +1,8 @@
-venv/
+﻿venv/
+v1_antigo/
 __pycache__/
 *.pyc
 .idea/
 .vscode/
 _smoke*.py
-HANDOFF.md
-TRABALHO_FINAL.md
+

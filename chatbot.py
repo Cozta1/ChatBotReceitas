@@ -58,6 +58,14 @@ INTERROGATIVAS = (
     "continue falando", "me ajuda a entender",
 )
 
+# Intencoes que o Agente 1 (LLM classificador) pode devolver
+INTENCOES = [
+    "saudacao", "despedida", "agradecimento", "ajuda", "receita_aleatoria",
+    "buscar_por_nome", "buscar_por_ingredientes",
+    "categoria:sobremesa", "categoria:prato principal", "categoria:lanche",
+    "categoria:bebida", "categoria:acompanhamento",
+]
+
 ESTATISTICAS = {"total": 0, "base": 0, "llm": 0,
                 "tempo_base_ms": 0.0, "tempo_llm_ms": 0.0}
 
@@ -83,6 +91,22 @@ def parece_pergunta(t):
     return t.endswith("?") or t.startswith(INTERROGATIVAS)
 
 
+ORDINAIS = {"primeira": 1, "primeiro": 1, "segunda": 2, "segundo": 2,
+            "terceira": 3, "terceiro": 3, "ultima": -1, "ultimo": -1}
+
+
+def _extrair_numero(texto, n):
+    """Extrai a escolha (1..n) de frases como 'quero a 1' ou 'a segunda'.
+    Retorna None se nenhum numero valido aparecer."""
+    for palavra, num in ORDINAIS.items():
+        if palavra in texto:
+            return n if num == -1 else (num if num <= n else None)
+    for tok in texto.split():
+        if tok.isdigit() and 1 <= int(tok) <= n:
+            return int(tok)
+    return None
+
+
 def _r_base(texto, t0, marcador="base"):
     dt = (time.time() - t0) * 1000
     ESTATISTICAS["base"] += 1
@@ -105,16 +129,36 @@ def _r_llm(pergunta, sessao, contexto=""):
 
 # Fluxo (sondagem -> passo a passo -> conclusao)
 
-def _formatar_sugestao(r):
-    return (f"Que tal '{r['nome']}'?\n"
-            f"Tempo: {r['tempo']} | Dificuldade: {r.get('dificuldade','?').title()}\n\n"
-            f"Voce toparia fazer essa receita?")
+# Modelos de introducao da lista (estaticos, reutilizaveis, sem custo de LLM)
+INTRO_PADRAO = "Encontrei estas opcoes:"
+INTRO_NOME = "Encontrei estas receitas pra voce:"
+INTRO_INGREDIENTES = "Com esses ingredientes da pra fazer alguma destas:"
+INTRO_ALEATORIA = "Separei estas receitas pra te surpreender:"
+CATEGORIA_ALVO = {
+    "sobremesa": "uma sobremesa", "prato principal": "um prato principal",
+    "lanche": "um lanche", "bebida": "uma bebida",
+    "acompanhamento": "um acompanhamento",
+}
 
 
-def iniciar_sondagem(candidatas, s):
+def intro_categoria(cat):
+    return (f"Para {CATEGORIA_ALVO.get(cat, 'isso')} voce pode fazer "
+            "alguma das receitas que tenho a seguir:")
+
+
+def _formatar_opcoes(cands, intro=INTRO_PADRAO):
+    linhas = "\n".join(
+        f"  {i+1}. {r['nome']} "
+        f"({r['tempo']}, {r.get('dificuldade','?').title()})"
+        for i, r in enumerate(cands))
+    return (intro + "\n\n" + linhas +
+            "\n\nQual voce quer? Diga o numero (ex.: 'quero a receita 1').")
+
+
+def iniciar_sondagem(candidatas, s, intro=INTRO_PADRAO):
     s.update(candidatas=list(candidatas), candidata_atual=0,
-             pergunta_tipo="sugestao", estado="sondagem")
-    return _formatar_sugestao(s["candidatas"][0])
+             pergunta_tipo="escolha", estado="sondagem")
+    return _formatar_opcoes(s["candidatas"], intro)
 
 
 def cancelar(s):
@@ -143,51 +187,38 @@ def proximo_passo(s):
 def resposta_sondagem(texto, s):
     tipo = s["pergunta_tipo"]
     sim, nao = contem(texto, SIM), contem(texto, NAO)
-    r = s["candidatas"][s["candidata_atual"]]
 
-    if tipo == "sugestao":
-        if nao and not sim:
-            restantes = len(s["candidatas"]) - s["candidata_atual"] - 1
-            if restantes <= 0:
+    if tipo == "escolha":
+        escolha = _extrair_numero(texto, len(s["candidatas"]))
+        if escolha is None:
+            if nao and not sim:
                 s["estado"] = "inicio"
-                return "Era a ultima opcao! Quer pedir algo diferente?"
-            s["pergunta_tipo"] = "confirmar_proxima"
-            return f"Tudo bem! Tenho mais {restantes} opcao(oes). Quer ver a proxima?"
-        if not sim:
-            return "Quer fazer essa? Diz 'sim' ou 'nao'."
-        s["pergunta_tipo"] = "confirmar_ingredientes"
-        return f"Otimo! Te passo a lista de ingredientes do '{r['nome']}'?"
-
-    if tipo == "confirmar_proxima":
-        if nao and not sim:
-            s["estado"] = "inicio"
-            return "Sem problema! O que mais posso fazer?"
-        if not sim:
-            return "Sim ou nao?"
-        s["candidata_atual"] += 1
-        s["pergunta_tipo"] = "sugestao"
-        return _formatar_sugestao(s["candidatas"][s["candidata_atual"]])
-
-    if tipo == "confirmar_ingredientes":
-        if nao and not sim:
-            s["estado"] = "inicio"
-            return "Tudo bem! Se quiser outra, e so chamar."
+                return "Sem problema! O que mais posso fazer?"
+            return ("Nao entendi qual receita. Diga o numero, "
+                    "ex.: 'quero a 1' ou 'me mostra a 2'.")
+        s["candidata_atual"] = escolha - 1
+        r = s["candidatas"][escolha - 1]
         s["receita"] = r
-        lista = "\n".join(f" - {i.capitalize()}" for i in r["ingredientes"])
-        s["pergunta_tipo"] = "confirmar_passos"
-        return f"Ingredientes do '{r['nome']}':\n\n{lista}\n\nJa tem tudo? Comeco o passo a passo?"
+        s["pergunta_tipo"] = "confirmar_guia"
+        return (f"{r['descricao']}\n\n"
+                f"'{r['nome']}' - {r['tempo']} | {r.get('dificuldade','?').title()}\n\n"
+                "Quer que eu te guie no passo a passo? (ou diga 'outra' pra ver a "
+                "lista, ou 'manda tudo' pra receita completa)")
 
-    if tipo == "confirmar_passos":
-        if nao and not sim:
-            s["estado"] = "inicio"
-            s["receita"] = None
-            return "Quando tiver tudo, me chame!"
+    r = s["receita"] or s["candidatas"][s["candidata_atual"]]
+
+    if tipo == "confirmar_guia":
+        if nao and not sim:  # nao quer o guia -> volta pra lista pra escolher outra
+            s["pergunta_tipo"] = "escolha"
+            return "Sem problema! " + _formatar_opcoes(s["candidatas"])
+        lista = "\n".join(f" - {i.capitalize()}" for i in r["ingredientes"])
         s["estado"] = "passo_a_passo"
         s["passo_atual"] = 0
-        return ("Vamos la! 'pronto' avanca, 'manda tudo' entrega completa.\n\n"
+        return (f"Ingredientes do '{r['nome']}':\n\n{lista}\n\n"
+                "Vamos la! 'pronto' avanca cada passo, 'manda tudo' entrega tudo.\n\n"
                 + mostrar_passo(s))
 
-    return _formatar_sugestao(r)
+    return _formatar_opcoes(s["candidatas"])
 
 
 def processar_conclusao(msg, s):
@@ -203,6 +234,30 @@ def processar_conclusao(msg, s):
         m = "Espero que tenha ficado bom!"
     return f"{m}\n\n{sug}"
 
+
+
+def _rotear(intent, mensagem, sessao, t0):
+    """Mapeia uma intencao resolvida para uma resposta. None = nao resolveu
+    (caller segue para o fluxo nome -> ingredientes -> FAQ -> LLM)."""
+    if intent == "saudacao": return _r_base(random.choice(SAUDACOES), t0)
+    if intent == "despedida": return _r_base(random.choice(DESPEDIDAS), t0)
+    if intent == "agradecimento": return _r_base(random.choice(AGRADECIMENTOS), t0)
+    if intent == "ajuda": return _r_base(AJUDA, t0)
+    if intent == "receita_aleatoria":
+        return _r_base(iniciar_sondagem(random.sample(RECEITAS, 3), sessao,
+                                        INTRO_ALEATORIA), t0)
+    if intent == "buscar_por_nome":
+        cands, intro = kb.buscar_por_nome(mensagem), INTRO_NOME
+    elif intent.startswith("categoria:"):
+        cat = intent.split(":", 1)[1]
+        recs = kb.buscar_por_categoria(cat)
+        cands = random.sample(recs, min(3, len(recs))) if recs else []
+        intro = intro_categoria(cat)
+    elif intent == "buscar_por_ingredientes":
+        cands, intro = kb.buscar_por_ingredientes(tokenizar(mensagem)), INTRO_INGREDIENTES
+    else:
+        return None
+    return _r_base(iniciar_sondagem(cands, sessao, intro), t0) if cands else None
 
 
 def _tenta_faq(mensagem, t0):
@@ -270,27 +325,14 @@ def _gerar(mensagem, sessao):
     if parece_pergunta(texto):
         return _tenta_faq(mensagem, t0) or _r_llm(mensagem, sessao)
 
+    # Naive Bayes resolve os casos confiantes; se nao, o Agente 1 (LLM) tenta
     intent, conf = detectar_intencao(mensagem)
-    if conf:
-        if intent == "saudacao": return _r_base(random.choice(SAUDACOES), t0)
-        if intent == "despedida": return _r_base(random.choice(DESPEDIDAS), t0)
-        if intent == "agradecimento": return _r_base(random.choice(AGRADECIMENTOS), t0)
-        if intent == "ajuda": return _r_base(AJUDA, t0)
-        if intent == "receita_aleatoria":
-            return _r_base(iniciar_sondagem(random.sample(RECEITAS, 3), sessao), t0)
-        if intent == "buscar_por_nome":
-            cands = kb.buscar_por_nome(mensagem)
-            if cands:
-                return _r_base(iniciar_sondagem(cands, sessao), t0)
-        elif intent.startswith("categoria:"):
-            recs = kb.buscar_por_categoria(intent.split(":", 1)[1])
-            if recs:
-                amostra = random.sample(recs, min(3, len(recs)))
-                return _r_base(iniciar_sondagem(amostra, sessao), t0)
-        elif intent == "buscar_por_ingredientes":
-            cands = kb.buscar_por_ingredientes(tokenizar(mensagem))
-            if cands:
-                return _r_base(iniciar_sondagem(cands, sessao), t0)
+    if not conf:
+        intent = llm.classificar(mensagem, INTENCOES, sessao.get("historico"))
+    if intent:
+        r = _rotear(intent, mensagem, sessao, t0)
+        if r:
+            return r
 
     #nome -> ingredientes -> FAQ -> LLM
     cands = kb.buscar_por_nome(mensagem) or kb.buscar_por_ingredientes(tokenizar(mensagem))

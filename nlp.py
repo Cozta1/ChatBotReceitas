@@ -150,6 +150,24 @@ TREINO: list[tuple[str, str]] = [
     ("me da a receita de moqueca", "buscar_por_nome"),
     ("como preparar feijao tropeiro", "buscar_por_nome"),
 
+    # "receita de X" — desambiguacao (a palavra "receita" puxava p/ aleatoria)
+    ("receita de lasanha", "buscar_por_nome"),
+    ("receita de panqueca", "buscar_por_nome"),
+    ("receita de omelete", "buscar_por_nome"),
+    ("receita de macarrao", "buscar_por_nome"),
+    ("receita de frango", "buscar_por_ingredientes"),
+    ("receita de carne", "buscar_por_ingredientes"),
+    ("receita de doce", "categoria:sobremesa"),
+    ("receita de torta", "categoria:sobremesa"),
+    ("receita de jantar", "categoria:prato principal"),
+    ("receita de refeicao", "categoria:prato principal"),
+    ("receita de salgado", "categoria:lanche"),
+    ("receita de sanduiche", "categoria:lanche"),
+    ("receita de bebida", "categoria:bebida"),
+    ("receita de drink", "categoria:bebida"),
+    ("receita de salada", "categoria:acompanhamento"),
+    ("receita de acompanhamento", "categoria:acompanhamento"),
+
     # confirmacao_passo (passo a passo)
     ("pronto", "confirmacao_passo"), ("ja fiz", "confirmacao_passo"),
     ("feito", "confirmacao_passo"), ("pode continuar", "confirmacao_passo"),

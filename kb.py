@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from receitas import RECEITAS
 
-LIMIAR_FAQ = 0.60  # similaridade minima para a FAQ responder
+LIMIAR_FAQ = 0.70  # similaridade minima para a FAQ responder (abaixo disso -> LLM)
 
 FAQ: list[tuple[str, str]] = [
     ("como substituir manteiga por oleo em bolo",

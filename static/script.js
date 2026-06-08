@@ -24,6 +24,7 @@ function formatResponse(text) {
     .replace(/^-{3,}$/gm, '<hr>')
     .replace(/^[-•]\s*(.+)/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/(<\/?(?:ul|li)>)\n/g, '$1')  // evita <br> entre itens da lista
     .replace(/\n/g, '<br>');
 }
 

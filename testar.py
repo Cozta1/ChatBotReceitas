@@ -45,9 +45,9 @@ CENARIOS = [
     ("Receita ALEATORIA + cancelar",
      ["me surpreenda", "cancelar"], False),
 
-    ("Conclusao com feedback POSITIVO e NEGATIVO",
-     ["receita de limonada", "a 1", "sim", "manda tudo", "ficou otimo",
-      "receita de limonada", "a 1", "sim", "manda tudo", "ficou ruim"], False),
+    ("Fim sem feedback: guia completo encerra direto no ultimo passo",
+     ["receita de feijoada", "a 1", "sim", "pronto", "pronto", "pronto",
+      "pronto", "pronto", "pronto"], False),
 
     ("FAQ (perguntas culinarias que batem na base)",
      ["como descongelar carne com seguranca",

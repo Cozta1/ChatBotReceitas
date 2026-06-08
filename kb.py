@@ -123,13 +123,13 @@ def receita_aleatoria() -> dict:
 
 #formatacao
 def formatar_receita(r: dict) -> str:
-    linha = "=" * 46
     ings = "\n".join(f"- {i.capitalize()}" for i in r["ingredientes"])
-    passos = "\n".join(f"{i+1}. {p}" for i, p in enumerate(r["instrucoes"]))
-    return (f"\n{linha}\n {r['nome'].upper()}\n{linha}\n"
-            f"Tempo: {r['tempo']} | Porcoes: {r['porcoes']} | "
+    passos = "\n".join(f"{n}. {p}" for n, p in enumerate(r["instrucoes"], 1))
+    return (f"\n**{r['nome']}**\n"
+            f"Tempo: {r['tempo']}  |  Porcoes: {r['porcoes']}  |  "
             f"Dificuldade: {r.get('dificuldade','?').title()}\n\n"
-            f"INGREDIENTES:\n{ings}\n\nMODO DE PREPARO:\n{passos}\n{linha}")
+            f"**Ingredientes**\n{ings}\n\n"
+            f"**Modo de preparo**\n{passos}")
 
 
 def resumo_receita(r: dict) -> str:

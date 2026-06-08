@@ -32,14 +32,6 @@ AJUDA = (
     "  - PASSO A PASSO: apos escolher, 'pronto' avanca e 'manda tudo' entrega completa"
 )
 ENCORAJAMENTOS = ["Otimo!", "Muito bem!", "Perfeito!", "Mandou bem!"]
-SUGESTOES_FIM = ["Que tal uma sobremesa?", "Vamos pra um lanche?", "Que tal algo para beber?"]
-
-POSITIVOS = ("gostei", "otimo", "delicioso", "perfeito", "amei", "adorei",
-             "ficou bom", "ficou gostoso", "ficou otimo", "ficou show",
-             "deu certo", "maravilhoso", "excelente")
-NEGATIVOS = ("nao gostei", "ficou ruim", "ficou horrivel", "horrivel",
-             "horrivel", "pessimo", "ruim", "errei", "queimou",
-             "deu errado", "estragou", "passou do ponto")
 
 SINAIS = {
     "cancelar": ("cancelar", "outra receita", "esquece", "desisti", "recomecar"),
@@ -148,7 +140,7 @@ def intro_categoria(cat):
 
 def _formatar_opcoes(cands, intro=INTRO_PADRAO):
     linhas = "\n".join(
-        f"  {i+1}. {r['nome']} "
+        f"{i+1}. **{r['nome']}** "
         f"({r['tempo']}, {r.get('dificuldade','?').title()})"
         for i, r in enumerate(cands))
     return (intro + "\n\n" + linhas +
@@ -166,21 +158,27 @@ def cancelar(s):
     return "Cancelei. O que voce gostaria de cozinhar agora?"
 
 
+def _fechamento(s):
+    """Mensagem de encerramento (sem pedir feedback) + reseta a sessao."""
+    resetar(s)
+    return "Espero que tenha ficado bom!\n\nO que quer fazer agora?"
+
+
 def entregar_completa(s):
-    s["estado"] = "conclusao"
-    return f"Aqui esta a receita completa:{kb.formatar_receita(s['receita'])}\n\nMe diz quando terminar!"
+    receita = kb.formatar_receita(s["receita"])
+    return f"Aqui esta a receita completa:{receita}\n\n{_fechamento(s)}"
 
 
 def mostrar_passo(s):
     i, total = s["passo_atual"], len(s["receita"]["instrucoes"])
-    return f"[ Passo {i+1}/{total} ]\n  >> {s['receita']['instrucoes'][i]}\n\nMe avisa quando terminar!"
+    passo = f"**Passo {i+1} de {total}**\n{s['receita']['instrucoes'][i]}"
+    if i + 1 >= total:  # ultimo passo: encerra junto, sem pedir confirmacao
+        return f"{passo}\n\n{_fechamento(s)}"
+    return f"{passo}\n\nQuando terminar, e so dizer \"pronto\"."
 
 
 def proximo_passo(s):
     s["passo_atual"] += 1
-    if s["passo_atual"] >= len(s["receita"]["instrucoes"]):
-        s["estado"] = "conclusao"
-        return f"Concluido! '{s['receita']['nome']}' esta pronto!\n\nComo ficou?"
     return random.choice(ENCORAJAMENTOS) + "\n\n" + mostrar_passo(s)
 
 
@@ -201,7 +199,7 @@ def resposta_sondagem(texto, s):
         s["receita"] = r
         s["pergunta_tipo"] = "confirmar_guia"
         return (f"{r['descricao']}\n\n"
-                f"'{r['nome']}' - {r['tempo']} | {r.get('dificuldade','?').title()}\n\n"
+                f"**{r['nome']}** - {r['tempo']} | {r.get('dificuldade','?').title()}\n\n"
                 "Quer que eu te guie no passo a passo? (ou diga 'outra' pra ver a "
                 "lista, ou 'manda tudo' pra receita completa)")
 
@@ -211,29 +209,15 @@ def resposta_sondagem(texto, s):
         if nao and not sim:  # nao quer o guia -> volta pra lista pra escolher outra
             s["pergunta_tipo"] = "escolha"
             return "Sem problema! " + _formatar_opcoes(s["candidatas"])
-        lista = "\n".join(f" - {i.capitalize()}" for i in r["ingredientes"])
+        lista = "\n".join(f"- {i.capitalize()}" for i in r["ingredientes"])
         s["estado"] = "passo_a_passo"
         s["passo_atual"] = 0
-        return (f"Ingredientes do '{r['nome']}':\n\n{lista}\n\n"
-                "Vamos la! 'pronto' avanca cada passo, 'manda tudo' entrega tudo.\n\n"
+        return (f"**Ingredientes - {r['nome']}**\n{lista}\n\n"
+                "Bora cozinhar! Te guio passo a passo - diga \"pronto\" para "
+                "avancar (ou \"manda tudo\" pra ver a receita inteira).\n\n"
                 + mostrar_passo(s))
 
     return _formatar_opcoes(s["candidatas"])
-
-
-def processar_conclusao(msg, s):
-    texto = normalizar(msg)
-    nome = s["receita"]["nome"] if s["receita"] else "prato"
-    sug = random.choice(SUGESTOES_FIM)
-    resetar(s)
-    if contem(texto, POSITIVOS):
-        m = f"Que otimo! '{nome}' ficou uma delicia!"
-    elif contem(texto, NEGATIVOS):
-        m = "Que pena! Mas faz parte do aprendizado."
-    else:
-        m = "Espero que tenha ficado bom!"
-    return f"{m}\n\n{sug}"
-
 
 
 def _rotear(intent, mensagem, sessao, t0):
@@ -312,10 +296,6 @@ def _gerar(mensagem, sessao):
             resetar(sessao)  # escape: usuario perguntou algo culinario
         else:
             return _r_base(resposta_sondagem(texto, sessao), t0)
-
-    #conclusao
-    if sessao["estado"] == "conclusao":
-        return _r_base(processar_conclusao(mensagem, sessao), t0)
 
     #inicio
     if contem(texto, SINAIS["cancelar"]):

@@ -77,6 +77,9 @@ O endpoint `/stats` ja fornece:
 
 Util para a secao "Resultados e Discussao" do trabalho.
 
+## Demonstração
+Video de demonstração: https://www.youtube.com/watch?v=uBN5hmr1Q6g
+
 ## Integrantes
 
 - Gabriel Krepker

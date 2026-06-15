@@ -258,6 +258,12 @@ function autoResize() {
 
 newChatBtn.addEventListener('click', createNewChat);
 
+const appWrapper    = document.querySelector('.app-wrapper');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+sidebarToggle.addEventListener('click', () => {
+  appWrapper.classList.toggle('sidebar-collapsed');
+});
+
 sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
 
 inputEl.addEventListener('keydown', (e) => {

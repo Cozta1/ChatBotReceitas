@@ -1,14 +1,7 @@
-"""ChefBot — orquestrador hibrido (KB -> LLM fallback).
-
-Fluxo no estado inicio:
-  pergunta culinaria (interrogativa)? -> FAQ TF-IDF -> LLM
-  intent confiavel?                   -> handler especifico
-  fallback                            -> nome -> ingredientes -> FAQ -> LLM
-"""
 import random
 import time
 
-import kb
+import base
 import llm
 from receitas import RECEITAS
 from nlp import detectar_intencao, normalizar, tokenizar
@@ -58,8 +51,11 @@ INTENCOES = [
     "categoria:bebida", "categoria:acompanhamento",
 ]
 
-ESTATISTICAS = {"total": 0, "base": 0, "llm": 0,
-                "tempo_base_ms": 0.0, "tempo_llm_ms": 0.0}
+# Intencoes que representam uma NOVA busca de receita (usadas para escapar da
+# sondagem quando o usuario muda de ideia em vez de escolher um numero).
+BUSCA_INTENTS = {"receita_aleatoria", "buscar_por_nome", "buscar_por_ingredientes"}
+
+ESTATISTICAS = {"total": 0, "base": 0, "llm": 0, "tempo_base_ms": 0.0, "tempo_llm_ms": 0.0}
 
 
 # Sessao
@@ -88,8 +84,7 @@ ORDINAIS = {"primeira": 1, "primeiro": 1, "segunda": 2, "segundo": 2,
 
 
 def _extrair_numero(texto, n):
-    """Extrai a escolha (1..n) de frases como 'quero a 1' ou 'a segunda'.
-    Retorna None se nenhum numero valido aparecer."""
+    # Extrai a escolha (1..n) de frases como 'quero a 1' ou 'a segunda'. Retorna None se nenhum numero valido aparecer.
     for palavra, num in ORDINAIS.items():
         if palavra in texto:
             return n if num == -1 else (num if num <= n else None)
@@ -110,6 +105,12 @@ def _r_base(texto, t0, marcador="base"):
 def _r_llm(pergunta, sessao, contexto=""):
     t0 = time.time()
     historico = sessao.get("historico", [])
+    # guarda de escopo: so respondemos sobre culinaria/alimentacao.
+    # fast-path: se a mensagem encosta no vocabulario culinario da base, e do
+    # tema e nao consultamos o guardiao LLM (evita falso positivo do 3B).
+    # so bloqueia quando vocabulario E guardiao concordam que esta fora.
+    if not base.parece_culinario(pergunta) and not llm.dentro_do_escopo(pergunta, historico):
+        return _r_base(llm.FORA_DO_ESCOPO, t0, "fora-escopo")
     texto = llm.responder(pergunta, historico=historico, contexto=contexto)
     dt = (time.time() - t0) * 1000
     ESTATISTICAS["llm"] += 1
@@ -159,13 +160,13 @@ def cancelar(s):
 
 
 def _fechamento(s):
-    """Mensagem de encerramento (sem pedir feedback) + reseta a sessao."""
+    # Mensagem de encerramento (sem pedir feedback) + reseta a sessao.
     resetar(s)
     return "Espero que tenha ficado bom!\n\nO que quer fazer agora?"
 
 
 def entregar_completa(s):
-    receita = kb.formatar_receita(s["receita"])
+    receita = base.formatar_receita(s["receita"])
     return f"Aqui esta a receita completa:{receita}\n\n{_fechamento(s)}"
 
 
@@ -180,6 +181,18 @@ def mostrar_passo(s):
 def proximo_passo(s):
     s["passo_atual"] += 1
     return random.choice(ENCORAJAMENTOS) + "\n\n" + mostrar_passo(s)
+
+
+def _quer_nova_busca(texto, mensagem, s):
+    """Durante a sondagem, detecta se o usuario pediu OUTRA coisa em vez de
+    escolher um numero (ex.: 'quero algo para beber'). So troca de fluxo com
+    intencao de busca confiante e quando nao ha escolha valida na mensagem."""
+    if _extrair_numero(texto, len(s["candidatas"])) is not None:
+        return False  # e uma escolha, deixa a sondagem tratar
+    if contem(texto, SIM) or contem(texto, NAO):
+        return False  # sim/nao pertencem ao fluxo da sondagem
+    intent, conf = detectar_intencao(mensagem)
+    return conf and (intent in BUSCA_INTENTS or intent.startswith("categoria:"))
 
 
 def resposta_sondagem(texto, s):
@@ -221,8 +234,7 @@ def resposta_sondagem(texto, s):
 
 
 def _rotear(intent, mensagem, sessao, t0):
-    """Mapeia uma intencao resolvida para uma resposta. None = nao resolveu
-    (caller segue para o fluxo nome -> ingredientes -> FAQ -> LLM)."""
+    # Mapeia uma intencao resolvida para uma resposta. None = nao resolveu (caller segue para o fluxo nome -> ingredientes -> FAQ -> LLM).
     if intent == "saudacao": return _r_base(random.choice(SAUDACOES), t0)
     if intent == "despedida": return _r_base(random.choice(DESPEDIDAS), t0)
     if intent == "agradecimento": return _r_base(random.choice(AGRADECIMENTOS), t0)
@@ -231,21 +243,21 @@ def _rotear(intent, mensagem, sessao, t0):
         return _r_base(iniciar_sondagem(random.sample(RECEITAS, 3), sessao,
                                         INTRO_ALEATORIA), t0)
     if intent == "buscar_por_nome":
-        cands, intro = kb.buscar_por_nome(mensagem), INTRO_NOME
+        cands, intro = base.buscar_por_nome(mensagem), INTRO_NOME
     elif intent.startswith("categoria:"):
         cat = intent.split(":", 1)[1]
-        recs = kb.buscar_por_categoria(cat)
+        recs = base.buscar_por_categoria(cat)
         cands = random.sample(recs, min(3, len(recs))) if recs else []
         intro = intro_categoria(cat)
     elif intent == "buscar_por_ingredientes":
-        cands, intro = kb.buscar_por_ingredientes(tokenizar(mensagem)), INTRO_INGREDIENTES
+        cands, intro = base.buscar_por_ingredientes(tokenizar(mensagem)), INTRO_INGREDIENTES
     else:
         return None
     return _r_base(iniciar_sondagem(cands, sessao, intro), t0) if cands else None
 
 
 def _tenta_faq(mensagem, t0):
-    res = kb.buscar_faq(mensagem)
+    res = base.buscar_faq(mensagem)
     if res is None:
         return None
     return _r_base(f"{res.dados}\n\n[FAQ, sim {res.confianca:.2f}]", t0, "base-faq")
@@ -294,6 +306,8 @@ def _gerar(mensagem, sessao):
             return _r_base(entregar_completa(sessao), t0)
         if parece_pergunta(texto):
             resetar(sessao)  # escape: usuario perguntou algo culinario
+        elif _quer_nova_busca(texto, mensagem, sessao):
+            resetar(sessao)  # escape: usuario pediu outra coisa (cai no inicio)
         else:
             return _r_base(resposta_sondagem(texto, sessao), t0)
 
@@ -315,7 +329,7 @@ def _gerar(mensagem, sessao):
             return r
 
     #nome -> ingredientes -> FAQ -> LLM
-    cands = kb.buscar_por_nome(mensagem) or kb.buscar_por_ingredientes(tokenizar(mensagem))
+    cands = base.buscar_por_nome(mensagem) or base.buscar_por_ingredientes(tokenizar(mensagem))
     if cands:
         return _r_base(iniciar_sondagem(cands, sessao), t0)
 
@@ -323,11 +337,11 @@ def _gerar(mensagem, sessao):
     if faq:
         return faq
 
-    relacionadas = kb.buscar_por_ingredientes(tokenizar(mensagem))[:2]
+    relacionadas = base.buscar_por_ingredientes(tokenizar(mensagem))[:2]
     contexto = ""
     if relacionadas:
         contexto = "Receitas relacionadas:\n" + "\n".join(
-            kb.resumo_receita(r) for r in relacionadas)
+            base.resumo_receita(r) for r in relacionadas)
     return _r_llm(mensagem, sessao, contexto=contexto)
 
 

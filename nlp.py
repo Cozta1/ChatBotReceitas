@@ -221,12 +221,12 @@ _clf.fit(np.array([_vetorizar(t) for t in _tokens_treino]), _labels)
 
 
 def detectar_intencao(texto: str, fator: float = 1.8) -> tuple[str, bool]:
-    """Retorna (intencao, confiante). `confiante=False` -> caller usa fallback.
+    # Retorna (intencao, confiante). `confiante=False` -> caller usa fallback.
 
-    Confianca exige que (a) algum token bata no vocabulario treinado e
-    (b) probs.max() >= probs.mean() * fator. Sem (a) o classifier
-    responderia so com priors -> retornavamos saudacao/etc. errado.
-    """
+    # Confianca exige que (a) algum token bata no vocabulario treinado e
+    # (b) probs.max() >= probs.mean() * fator. Sem (a) o classifier
+    # responderia so com priors -> retornavamos saudacao/etc. errado.
+    
     tokens = tokenizar(texto)
     if not tokens:
         return ("", False)

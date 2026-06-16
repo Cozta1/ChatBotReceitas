@@ -1,7 +1,3 @@
-"""NLP: tokenizacao NLTK + classificador Naive Bayes de intencao.
-
-Confianca segue o criterio do trabalho 1: max(probs) >= mean(probs) * 1.5.
-"""
 import string
 import unicodedata
 
